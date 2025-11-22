@@ -1,0 +1,337 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* New Color Palette */
+  --cream: #fdfceb;
+  --teal: #9fdcc8;
+  --dark-purple: #22112a;
+  --terracotta: #a3635d;
+  
+  /* Semantic Colors */
+  --background: #fdfceb;
+  --foreground: #22112a;
+  --card: #fdfceb;
+  --card-foreground: #22112a;
+  --popover: #fdfceb;
+  --popover-foreground: #22112a;
+  --primary: #9fdcc8;
+  --primary-foreground: #22112a;
+  --secondary: #a3635d;
+  --secondary-foreground: #fdfceb;
+  --muted: #f5f3e0;
+  --muted-foreground: #4a3a4f;
+  --accent: #9fdcc8;
+  --accent-foreground: #22112a;
+  --destructive: #a3635d;
+  --destructive-foreground: #fdfceb;
+  --border: #e8e6d3;
+  --input: #e8e6d3;
+  --ring: #9fdcc8;
+  --chart-1: #9fdcc8;
+  --chart-2: #a3635d;
+  --chart-3: #22112a;
+  --chart-4: #fdfceb;
+  --chart-5: #4a3a4f;
+  --radius: 0.75rem;
+  --sidebar: #fdfceb;
+  --sidebar-foreground: #22112a;
+  --sidebar-primary: #9fdcc8;
+  --sidebar-primary-foreground: #22112a;
+  --sidebar-accent: #a3635d;
+  --sidebar-accent-foreground: #fdfceb;
+  --sidebar-border: #e8e6d3;
+  --sidebar-ring: #9fdcc8;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0 0);
+  --chart-2: oklch(0.696 0 0);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+  --background: 0 0% 3.6%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.6%;
+  --card-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 0 0% 33.3%;
+}
+
+@theme inline {
+  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Global Transitions and Interactive Effects */
+@layer base {
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Button Styling with Modern Effects */
+@layer components {
+  button,
+  [role="button"] {
+    @apply font-medium;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Primary buttons */
+  button[class*="primary"],
+  button[class*="bg-primary"],
+  .bg-primary {
+    @apply shadow-md;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  button[class*="primary"]:hover,
+  button[class*="bg-primary"]:hover,
+  .bg-primary:hover {
+    @apply shadow-lg;
+    transform: translateY(-2px);
+  }
+
+  button[class*="primary"]:active,
+  button[class*="bg-primary"]:active,
+  .bg-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Secondary buttons */
+  button[class*="secondary"],
+  button[class*="bg-secondary"],
+  .bg-secondary {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  button[class*="secondary"]:hover,
+  button[class*="bg-secondary"]:hover,
+  .bg-secondary:hover {
+    @apply shadow-md;
+    transform: translateY(-2px);
+  }
+
+  button[class*="secondary"]:active,
+  button[class*="bg-secondary"]:active,
+  .bg-secondary:active {
+    transform: translateY(0);
+  }
+
+  /* Link styling */
+  a {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  a:hover {
+    @apply text-primary;
+  }
+
+  /* Focus states for accessibility */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    ring-color: var(--primary);
+  }
+
+  /* Input styling */
+  input,
+  textarea,
+  select {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply ring-2;
+    ring-color: var(--primary);
+  }
+}
+
+/* Smooth hover effects for navigation elements */
+@layer components {
+  nav a,
+  nav button,
+  [class*="nav"] a,
+  [class*="nav"] button {
+    position: relative;
+    transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  nav a::after,
+  nav button::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  nav a:hover::after,
+  nav button:hover::after {
+    width: 100%;
+  }
+}
+
+/* Card hover effects */
+@layer components {
+  [class*="card"],
+  [class*="Card"] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  [class*="card"]:hover,
+  [class*="Card"]:hover {
+    @apply shadow-lg;
+    transform: translateY(-4px) scale(1.02);
+  }
+}
+
+/* Smooth parallax and cursor effects */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    cursor: default;
+  }
+  
+  a, button, [role="button"] {
+    cursor: pointer;
+    position: relative;
+  }
+}
+
+/* Smooth page transitions */
+@layer base {
+  * {
+    @apply scroll-smooth;
+
+/* Fix dialog stacking context issues - ensure dialogs always appear on top */
+@layer base {
+  [data-slot="dialog-portal"] {
+    isolation: isolate;
+    position: fixed;
+    z-index: 9999 !important;
+  }
+  
+  [data-slot="dialog-overlay"] {
+    z-index: 9999 !important;
+  }
+  
+  [data-slot="dialog-content"] {
+    z-index: 10000 !important;
+  }
+}
+  }
+}
+
+/* Force body children to not create stacking contexts that interfere with dialogs */
+body > * {  
+  isolation: auto !important;
+}
+
+/* Ensure dialog portal is always on top */
+body > [data-radix-portal] {
+  isolation: isolate !important;
+  z-index: 9999 !important;
+  position: fixed !important;
+}
