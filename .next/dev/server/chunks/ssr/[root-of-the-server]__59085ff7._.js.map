@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 18, "column": 0}, "map": {"version":3,"sources":["file:///C:/CollegeClubDirectory/app/about/page.jsx"],"sourcesContent":["export default function AboutPage() {\n  return (\n    <main className=\"mx-auto max-w-3xl px-4 py-8 md:px-6\">\n      <h1 className=\"text-balance text-2xl font-semibold tracking-tight md:text-3xl\">About</h1>\n      <p className=\"mt-2 text-sm text-muted-foreground\">\n        This directory helps students discover clubs across campus, with details on meetings, events, and contacts.\n      </p>\n    </main>\n  )\n}\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,8OAAC;QAAK,WAAU;;0BACd,8OAAC;gBAAG,WAAU;0BAAiE;;;;;;0BAC/E,8OAAC;gBAAE,WAAU;0BAAqC;;;;;;;;;;;;AAKxD"}}]
-}
