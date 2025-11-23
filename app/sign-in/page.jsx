@@ -30,7 +30,12 @@ export default function SignInPage() {
       }
 
       localStorage.setItem("currentUser", JSON.stringify(user))
-            window.dispatchEvent(new Event("auth-change"))
+      
+      // Dispatch event and wait a bit to ensure state updates
+      window.dispatchEvent(new Event("auth-change"))
+      
+      // Small delay to ensure header state updates before navigation
+      await new Promise(resolve => setTimeout(resolve, 100))
 
       if (user.role === "admin" && user.assignedClubId) {
         router.push(`/club-admin/${user.assignedClubId}`)
@@ -45,7 +50,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
@@ -73,14 +78,14 @@ export default function SignInPage() {
                 required
               />
             </div>
-            {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded">{error}</div>}
+            {error && <div className="text-destructive text-sm bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 p-3 rounded">{error}</div>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
           <p className="text-sm text-muted-foreground text-center mt-4">
             Don't have an account?{" "}
-            <Link href="/sign-up" className="text-blue-600 hover:underline font-medium">
+            <Link href="/sign-up" className="text-primary hover:underline font-medium">
               Sign up here
             </Link>
           </p>

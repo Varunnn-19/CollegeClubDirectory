@@ -25,7 +25,7 @@ export default function RootLayout({ children }) {
           <Suspense fallback={<div>Loading...</div>}>
             <CursorEffects />
             <SiteHeader />
-            <div className="min-h-[calc(100vh-160px)] transition-colors duration-300">
+            <div className="min-h-[calc(100vh-160px)] transition-colors duration-300 pt-[168px]">
               {children}
             </div>
             <SiteFooter />

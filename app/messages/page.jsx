@@ -89,7 +89,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background dark:bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6 flex items-center gap-4">
           <Link href="/">
@@ -103,7 +103,7 @@ export default function MessagesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
           {/* Conversations List */}
-          <div className="border rounded-lg bg-white overflow-y-auto">
+          <div className="border rounded-lg bg-card dark:bg-card overflow-y-auto">
             <div className="p-4 border-b">
               <h2 className="font-medium">Conversations</h2>
             </div>
@@ -117,8 +117,8 @@ export default function MessagesPage() {
                   <button
                     key={conv.userId}
                     onClick={() => handleSelectUser(conv.userId, conv.userName)}
-                    className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${
-                      selectedUser?.id === conv.userId ? "bg-blue-50" : ""
+                    className={`w-full text-left p-4 hover:bg-muted dark:hover:bg-muted transition-colors ${
+                      selectedUser?.id === conv.userId ? "bg-primary/10 dark:bg-primary/20" : ""
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -141,7 +141,7 @@ export default function MessagesPage() {
           </div>
 
           {/* Messages Area */}
-          <div className="md:col-span-2 border rounded-lg bg-white flex flex-col">
+          <div className="md:col-span-2 border rounded-lg bg-card dark:bg-card flex flex-col">
             {selectedUser ? (
               <>
                 <div className="p-4 border-b">

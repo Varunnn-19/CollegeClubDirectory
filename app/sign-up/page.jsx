@@ -96,6 +96,12 @@ export default function SignUpPage() {
       users.push(newUser)
       localStorage.setItem("users", JSON.stringify(users))
       localStorage.setItem("currentUser", JSON.stringify(newUser))
+      
+      // Dispatch event and wait a bit to ensure state updates
+      window.dispatchEvent(new Event("auth-change"))
+      
+      // Small delay to ensure header state updates before navigation
+      await new Promise(resolve => setTimeout(resolve, 100))
 
       if (newUser.role === "admin") {
         router.push(`/club-admin/${newUser.assignedClubId}`)
@@ -110,7 +116,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">Create Account</CardTitle>
@@ -233,7 +239,7 @@ export default function SignUpPage() {
                 required
               />
             </div>
-            {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded">{error}</div>}
+            {error && <div className="text-destructive text-sm bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 p-3 rounded">{error}</div>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Creating account..." : "Sign Up"}
             </Button>

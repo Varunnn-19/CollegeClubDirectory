@@ -17,19 +17,85 @@ export function SiteHeader() {
 
   useEffect(() => {
     setMounted(true)
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null")
-    setCurrentUser(user)
+    const checkUser = () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("currentUser") || "null")
+        setCurrentUser(user)
+      } catch (error) {
+        setCurrentUser(null)
+      }
+    }
+    checkUser()
 
     const handleStorageChange = () => {
-      const updatedUser = JSON.parse(localStorage.getItem("currentUser") || "null")
-      setCurrentUser(updatedUser)
+      checkUser()
+    }
+
+    const handleAuthChange = () => {
+      // Small delay to ensure localStorage is updated
+      setTimeout(checkUser, 50)
     }
 
     window.addEventListener("storage", handleStorageChange)
-        window.addEventListener("auth-change", handleStorageChange)
+    window.addEventListener("auth-change", handleAuthChange)
+    
+    // Check user state periodically (but less frequently)
+    const interval = setInterval(checkUser, 500)
+    
     return () =>  {
       window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("auth-change", handleStorageChange)
+      window.removeEventListener("auth-change", handleAuthChange)
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Force header to stay fixed at top - prevent any scroll movement
+  useEffect(() => {
+    const header = document.querySelector('header')
+    if (!header) return
+
+    const enforceFixedPosition = () => {
+      if (header) {
+        header.style.position = 'fixed'
+        header.style.top = '0'
+        header.style.left = '0'
+        header.style.right = '0'
+        header.style.transform = 'translate3d(0, 0, 0)'
+        header.style.zIndex = '9999'
+        header.style.width = '100%'
+      }
+    }
+
+    // Enforce on mount
+    enforceFixedPosition()
+
+    // Enforce on scroll
+    const handleScroll = () => {
+      enforceFixedPosition()
+    }
+
+    // Enforce on resize
+    const handleResize = () => {
+      enforceFixedPosition()
+    }
+
+    // Use requestAnimationFrame for smooth enforcement
+    let rafId = null
+    const enforceLoop = () => {
+      enforceFixedPosition()
+      rafId = requestAnimationFrame(enforceLoop)
+    }
+    rafId = requestAnimationFrame(enforceLoop)
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleResize)
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
     }
   }, [])
 
@@ -42,7 +108,19 @@ export function SiteHeader() {
 
   return (
     <header 
-      className="border-b z-[100] sticky top-0 backdrop-blur-md bg-background/95 border-border transition-colors duration-300"
+      className="border-b z-[9999] fixed top-0 left-0 right-0 backdrop-blur-md bg-background/95 dark:bg-background/95 border-border transition-colors duration-300 shadow-sm"
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        zIndex: 9999,
+        willChange: 'auto',
+        transform: 'translate3d(0, 0, 0)',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden'
+      }}
     >
       <div className="mx-auto max-w-6xl px-4 py-3 md:px-6 flex justify-center items-center gap-4">
         <div className="relative">

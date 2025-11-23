@@ -90,7 +90,7 @@ export default function ProfilePage() {
     .sort((a, b) => new Date(a.event?.date || 0) - new Date(b.event?.date || 0))
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background dark:bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">My Profile</h1>
