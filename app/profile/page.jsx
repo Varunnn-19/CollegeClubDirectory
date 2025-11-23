@@ -11,6 +11,7 @@ import { Calendar, Users, Star, MessageSquare, Settings } from "lucide-react"
 import {
   getMembershipsByUser,
   getEventRSVPs,
+  getReviews,
   getReviewsByClub,
   getMessages,
   getClubs,

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from 'next/navigation'
-import { ClubCard } from "@/components/club-card"
+import { ClubCard3D } from "@/components/club-card-3d"
 import { ClubModal } from "@/components/club-modal"
 import { SearchFilters } from "@/components/search-filters"
 import { clubs, categories, membershipTypes } from "@/lib/clubs"
@@ -151,9 +151,15 @@ export default function ClubsPage() {
           Showing {filtered.length} result{filtered.length === 1 ? "" : "s"}
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {paginated.map((club) => (
-            <ClubCard key={club.id} club={club} onOpen={openModal} />
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {paginated.map((club, index) => (
+            <div
+              key={club.id}
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <ClubCard3D club={club} onOpen={openModal} />
+            </div>
           ))}
         </div>
 

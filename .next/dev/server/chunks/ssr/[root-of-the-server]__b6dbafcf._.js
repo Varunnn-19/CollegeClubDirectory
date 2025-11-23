@@ -384,7 +384,7 @@ function SiteHeader() {
                                     }, this)
                                 ]
                             }, void 0, true),
-                            currentUser?.role === "admin" && currentUser?.assignedClubId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                            currentUser?.role === "admin" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                                 className: "text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md",
                                 style: {
                                     color: '#22112a',
@@ -398,7 +398,7 @@ function SiteHeader() {
                                     e.currentTarget.style.backgroundColor = 'transparent';
                                     e.currentTarget.style.color = '#22112a';
                                 },
-                                href: `/club-admin/${String(currentUser.assignedClubId)}`,
+                                href: `/club-admin/${currentUser.assignedClubId}`,
                                 children: "My Club"
                             }, void 0, false, {
                                 fileName: "[project]/components/site-header.jsx",
@@ -413,7 +413,7 @@ function SiteHeader() {
                                         style: {
                                             color: '#4a3a4f'
                                         },
-                                        children: currentUser?.name || 'User'
+                                        children: currentUser.name
                                     }, void 0, false, {
                                         fileName: "[project]/components/site-header.jsx",
                                         lineNumber: 233,
@@ -621,10 +621,10 @@ function SiteHeader() {
                                 }, this)
                             ]
                         }, void 0, true),
-                        currentUser?.role === "admin" && currentUser?.assignedClubId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                        currentUser?.role === "admin" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                             onClick: ()=>setOpen(false),
                             className: "py-2",
-                            href: `/club-admin/${String(currentUser.assignedClubId)}`,
+                            href: `/club-admin/${currentUser.assignedClubId}`,
                             children: "My Club"
                         }, void 0, false, {
                             fileName: "[project]/components/site-header.jsx",
@@ -636,7 +636,7 @@ function SiteHeader() {
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                     className: "text-sm text-muted-foreground",
-                                    children: currentUser?.name || 'User'
+                                    children: currentUser.name
                                 }, void 0, false, {
                                     fileName: "[project]/components/site-header.jsx",
                                     lineNumber: 342,

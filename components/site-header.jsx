@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { BookOpen } from "lucide-react"
@@ -41,11 +42,7 @@ export function SiteHeader() {
 
   return (
     <header 
-      className="border-b z-[100] sticky top-0 backdrop-blur-md"
-      style={{ 
-        backgroundColor: 'rgba(253, 252, 235, 0.95)',
-        borderColor: '#9fdcc8'
-      }}
+      className="border-b z-[100] sticky top-0 backdrop-blur-md bg-background/95 border-border transition-colors duration-300"
     >
       <div className="mx-auto max-w-6xl px-4 py-3 md:px-6 flex justify-center items-center gap-4">
         <div className="relative">
@@ -59,93 +56,39 @@ export function SiteHeader() {
             style={{ borderColor: '#9fdcc8' }}
           />
         </div>
-        <p 
-          className="text-center text-lg font-bold tracking-wide md:text-xl"
-          style={{ color: '#22112a' }}
-        >
+        <p className="text-center text-lg font-bold tracking-wide md:text-xl text-foreground">
           BMS COLLEGE OF ENGINEERING
         </p>
       </div>
 
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6">
-        <Link href="/" className="flex items-center gap-2" aria-label="College Club Directory Home">
-          <span 
-            className="font-semibold tracking-tight flex items-center"
-            style={{ color: '#22112a' }}
-          >
-            <BookOpen className="h-5 w-5 mr-2" style={{ color: '#9fdcc8' }} /> Club Directory
+        <Link href="/" className="flex items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95" aria-label="College Club Directory Home">
+          <span className="font-semibold tracking-tight flex items-center text-foreground">
+            <BookOpen className="h-5 w-5 mr-2 text-primary" /> Club Directory
           </span>
         </Link>
 
         <nav className="hidden items-center gap-4 md:flex">
           <Link 
-            className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-            style={{ 
-              color: '#22112a',
-              backgroundColor: 'transparent'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#9fdcc8'
-              e.currentTarget.style.color = '#22112a'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-              e.currentTarget.style.color = '#22112a'
-            }}
+            className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
             href="/"
           >
             Home
           </Link>
           <Link 
-            className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-            style={{ 
-              color: '#22112a',
-              backgroundColor: 'transparent'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#9fdcc8'
-              e.currentTarget.style.color = '#22112a'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-              e.currentTarget.style.color = '#22112a'
-            }}
+            className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
             href="/clubs"
           >
             Clubs
           </Link>
           <Link 
-            className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-            style={{ 
-              color: '#22112a',
-              backgroundColor: 'transparent'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#9fdcc8'
-              e.currentTarget.style.color = '#22112a'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-              e.currentTarget.style.color = '#22112a'
-            }}
+            className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
             href="/about"
           >
             About
           </Link>
           <Link 
-            className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-            style={{ 
-              color: '#22112a',
-              backgroundColor: 'transparent'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#9fdcc8'
-              e.currentTarget.style.color = '#22112a'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-              e.currentTarget.style.color = '#22112a'
-            }}
+            className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
             href="/contact"
           >
             Contact
@@ -153,100 +96,43 @@ export function SiteHeader() {
           {mounted && currentUser && (
             <>
               <Link 
-                className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-                style={{ 
-                  color: '#22112a',
-                  backgroundColor: 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#9fdcc8'
-                  e.currentTarget.style.color = '#22112a'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#22112a'
-                }}
+                className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
                 href="/profile"
               >
                 Profile
               </Link>
               <Link 
-                className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-                style={{ 
-                  color: '#22112a',
-                  backgroundColor: 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#9fdcc8'
-                  e.currentTarget.style.color = '#22112a'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#22112a'
-                }}
+                className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
                 href="/messages"
               >
                 Messages
               </Link>
               <Link 
-                className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-                style={{ 
-                  color: '#22112a',
-                  backgroundColor: 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#9fdcc8'
-                  e.currentTarget.style.color = '#22112a'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#22112a'
-                }}
+                className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
                 href="/create-club"
               >
                 Create Club
               </Link>
             </>
           )}
-          {currentUser?.role === "admin" && currentUser?.assignedClubId && (
+          {currentUser?.role === "admin" && (
             <Link 
-              className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md"
-              style={{ 
-                color: '#22112a',
-                backgroundColor: 'transparent'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#a3635d'
-                e.currentTarget.style.color = '#fdfceb'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#22112a'
-              }}
-              href={`/club-admin/${String(currentUser.assignedClubId)}`}
+              className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 active:scale-95"
+              href={`/club-admin/${currentUser.assignedClubId}`}
             >
               My Club
             </Link>
           )}
-        {mounted && currentUser ? (
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          {mounted && currentUser ? (
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium" style={{ color: '#4a3a4f' }}>{currentUser?.name || 'User'}</span>
+              <span className="text-sm font-medium text-foreground">{currentUser.name}</span>
               <Button 
                 size="sm" 
                 onClick={handleLogout} 
                 variant="outline"
-                style={{
-                  borderColor: '#a3635d',
-                  color: '#a3635d'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#a3635d'
-                  e.currentTarget.style.color = '#fdfceb'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#a3635d'
-                }}
+                className="transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 Logout
               </Button>
@@ -257,16 +143,7 @@ export function SiteHeader() {
                 <Button 
                   size="sm" 
                   variant="outline"
-                  style={{
-                    borderColor: '#9fdcc8',
-                    color: '#22112a'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#9fdcc8'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                  }}
+                  className="transition-all duration-300 hover:scale-105 active:scale-95"
                 >
                   Sign In
                 </Button>
@@ -274,23 +151,14 @@ export function SiteHeader() {
               <Link href="/sign-up">
                 <Button 
                   size="sm"
-                  style={{
-                    backgroundColor: '#9fdcc8',
-                    color: '#22112a',
-                    border: 'none'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '0.9'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '1'
-                  }}
+                  className="transition-all duration-300 hover:scale-105 active:scale-95"
                 >
                   Sign Up
                 </Button>
               </Link>
             </div>
           )}
+        </div>
         </nav>
 
         <Button
@@ -332,14 +200,14 @@ export function SiteHeader() {
               </Link>
             </>
           )}
-          {currentUser?.role === "admin" && currentUser?.assignedClubId && (
-            <Link onClick={() => setOpen(false)} className="py-2" href={`/club-admin/${String(currentUser.assignedClubId)}`}>
+          {currentUser?.role === "admin" && (
+            <Link onClick={() => setOpen(false)} className="py-2" href={`/club-admin/${currentUser.assignedClubId}`}>
               My Club
             </Link>
           )}
           {currentUser ? (
             <div className="flex flex-col gap-2 pt-2 border-t">
-              <span className="text-sm text-muted-foreground">{currentUser?.name || 'User'}</span>
+              <span className="text-sm text-muted-foreground">{currentUser.name}</span>
               <Button size="sm" onClick={handleLogout} variant="outline" className="w-full bg-transparent">
                 Logout
               </Button>

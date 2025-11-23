@@ -11,6 +11,7 @@ import { clubs } from "@/lib/clubs"
 import {
   getClubs,
   getMembershipsByUser,
+  getMembershipsByClub,
   saveMembership,
   deleteMembership,
   getEventsByClub,
@@ -35,9 +36,6 @@ import {
 export default function ClubDetailPage() {
   const params = useParams()
   const router = useRouter()
-  
-  // Ensure params.slug is a string
-  const slug = typeof params?.slug === 'string' ? params.slug : Array.isArray(params?.slug) ? params.slug[0] : ''
   const [club, setClub] = useState(null)
   const [currentUser, setCurrentUser] = useState(null)
   const [isMember, setIsMember] = useState(false)
@@ -54,9 +52,13 @@ export default function ClubDetailPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       // Get all clubs (default + custom)
+      if (!params?.slug) {
+        router.push("/clubs")
+        return
+      }
       const customClubs = getClubs()
       const allClubs = [...clubs, ...customClubs]
-      const foundClub = allClubs.find((c) => c.slug === slug)
+      const foundClub = allClubs.find((c) => c.slug === params.slug)
       if (!foundClub) {
         router.push("/clubs")
         return
@@ -95,11 +97,11 @@ export default function ClubDetailPage() {
         setRsvps(rsvpMap)
       }
     }
-  }, [slug, router])
+  }, [params.slug, router])
 
   const handleJoinClub = () => {
-    if (!currentUser) {
-      router.push("/sign-in")
+    if (!currentUser || !club) {
+      if (!currentUser) router.push("/sign-in")
       return
     }
 
@@ -118,7 +120,7 @@ export default function ClubDetailPage() {
   }
 
   const handleLeaveClub = () => {
-    if (!currentUser) return
+    if (!currentUser || !club) return
     deleteMembership(currentUser.id, club.id)
     setIsMember(false)
     setMemberCount((prev) => Math.max(0, prev - 1))
@@ -143,7 +145,7 @@ export default function ClubDetailPage() {
   }
 
   const handleSubmitReview = () => {
-    if (!currentUser || !reviewComment.trim()) return
+    if (!currentUser || !club || !reviewComment.trim()) return
 
     const review = {
       id: Date.now().toString(),

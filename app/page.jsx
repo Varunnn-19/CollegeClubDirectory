@@ -1,288 +1,121 @@
 "use client"
-import Link from "next/link"
-import { useState, useEffect, useRef } from "react"
-import { CursorEffects } from "@/components/cursor-effects"
-
-const quotes = [
-  "Join a community, find your passion.",
-  "Be part of something bigger than yourself.",
-  "Discover new talents, make lasting friendships.",
-  "Your journey to leadership starts here.",
-  "Transform ideas into action with like-minded peers.",
-]
+import { useState, useEffect } from "react"
+import { Hero3DScene } from "@/components/hero-3d-scene"
+import { Hero3DContent } from "@/components/hero-3d-content"
+import { Loading3D } from "@/components/loading-3d"
 
 export default function LandingPage() {
-  const [randomQuote, setRandomQuote] = useState("")
   const [isClient, setIsClient] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setRandomQuote(quotes[Math.floor(Math.random() * quotes.length)])
     setIsClient(true)
+    // Simulate loading time for 3D scene initialization
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
   }, [])
 
-  if (!isClient) {
-    return (
-      <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fdfceb' }}>
-        <div style={{ color: '#22112a' }}>Loading...</div>
-      </main>
-    )
+  if (!isClient) return null
+
+  if (isLoading) {
+    return <Loading3D onComplete={() => setIsLoading(false)} />
   }
 
-  const [mousePosition, setMousePosition] = useState({ 
-    x: typeof window !== 'undefined' ? window.innerWidth / 2 : 0, 
-    y: typeof window !== 'undefined' ? window.innerHeight / 2 : 0 
-  })
-  const sectionRef = useRef(null)
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    
-    const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
-    }
-
-    // Initialize to center
-    setMousePosition({ 
-      x: window.innerWidth / 2, 
-      y: window.innerHeight / 2 
-    })
-
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [])
-
   return (
-    <main 
-      className="min-h-screen relative overflow-hidden" 
-      style={{ backgroundColor: '#fdfceb' }}
-      ref={sectionRef}
-    >
-      {/* Dynamic gradient background that follows cursor */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-700"
-        style={{
-          background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(159, 220, 200, 0.2), rgba(163, 99, 93, 0.1), transparent 50%)`,
-        }}
-      />
-
-      {/* Cursor follower glow */}
-      <div
-        className="fixed pointer-events-none z-40 transition-all duration-300 ease-out"
-        style={{
-          left: `${mousePosition.x}px`,
-          top: `${mousePosition.y}px`,
-          transform: "translate(-50%, -50%)",
-          width: "200px",
-          height: "200px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(159, 220, 200, 0.3) 0%, rgba(163, 99, 93, 0.2) 50%, transparent 70%)",
-          filter: "blur(40px)",
-          opacity: 0.4,
-        }}
-      />
-
-      {/* Hero Section */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 py-16 md:px-12 md:py-20">
-        <div className="space-y-10 text-center">
-          {/* Badge */}
-          <div 
-            className="inline-block transform transition-all duration-500 hover:scale-110"
-            style={{
-              transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth / 2) * 0.01}px, ${(mousePosition.y - window.innerHeight / 2) * 0.01}px)` : 'none',
-            }}
-          >
-            <span 
-              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold border-2 transition-all duration-300 hover:shadow-lg"
-              style={{ 
-                backgroundColor: '#9fdcc8',
-                color: '#22112a',
-                borderColor: '#9fdcc8'
-              }}
-            >
-              <span 
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: '#22112a' }}
-              ></span>
-              Welcome to Student Life
-            </span>
-          </div>
-
-          {/* Main Heading */}
-          <h1 
-            className="text-balance text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight transition-transform duration-700"
-            style={{ 
-              color: '#22112a',
-              transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth / 2) * 0.005}px, ${(mousePosition.y - window.innerHeight / 2) * 0.005}px)` : 'none',
-            }}
-          >
-            Explore{" "}
-            <span 
-              className="text-transparent bg-clip-text transition-all duration-500 hover:scale-105 inline-block"
-              style={{ 
-                backgroundImage: typeof window !== 'undefined' ? `linear-gradient(${Math.atan2(mousePosition.y - window.innerHeight / 2, mousePosition.x - window.innerWidth / 2) * 180 / Math.PI}deg, #9fdcc8, #a3635d)` : 'linear-gradient(to right, #9fdcc8, #a3635d)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
-            >
-              Student Clubs
-            </span>
-          </h1>
-
-          {/* Subheading */}
-          <p 
-            className="text-pretty text-lg md:text-2xl max-w-3xl mx-auto leading-relaxed"
-            style={{ color: '#4a3a4f' }}
-          >
-            Discover communities of passionate students. Find your tribe, develop skills, and create memories that last
-            a lifetime.
-          </p>
-
-          {/* Quote Section */}
-          <div 
-            className="rounded-3xl p-8 md:p-12 backdrop-blur-sm border-2 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]"
-            style={{ 
-              backgroundColor: 'rgba(159, 220, 200, 0.15)',
-              borderColor: '#9fdcc8',
-              transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth / 2) * 0.008}px, ${(mousePosition.y - window.innerHeight / 2) * 0.008}px)` : 'none',
-            }}
-          >
-            <p 
-              className="text-xl md:text-2xl font-semibold italic"
-              style={{ color: '#22112a' }}
-            >
-              "{randomQuote}"
-            </p>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Link
-              href="/clubs"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 hover:scale-105 relative overflow-hidden group"
-              style={{ 
-                backgroundColor: '#9fdcc8',
-                color: '#22112a'
-              }}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const x = e.clientX - rect.left
-                const y = e.clientY - rect.top
-                e.currentTarget.style.setProperty('--mouse-x', `${x}px`)
-                e.currentTarget.style.setProperty('--mouse-y', `${y}px`)
-              }}
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
-                style={{
-                  background: `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.3), transparent 70%)`
-                }}
-              />
-              <span className="relative z-10">
-                Start Exploring
-                <svg className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
-            </Link>
-            <Link
-              href="/about"
-              className="inline-flex items-center justify-center px-8 py-4 border-2 rounded-xl font-semibold transition-all hover:shadow-md transform hover:-translate-y-1 hover:scale-105 hover:bg-a3635d/10 relative overflow-hidden group"
-              style={{ 
-                borderColor: '#a3635d',
-                color: '#a3635d'
-              }}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const x = e.clientX - rect.left
-                const y = e.clientY - rect.top
-                e.currentTarget.style.setProperty('--mouse-x', `${x}px`)
-                e.currentTarget.style.setProperty('--mouse-y', `${y}px`)
-              }}
-            >
-              <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
-                style={{
-                  background: `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(163, 99, 93, 0.2), transparent 70%)`
-                }}
-              />
-              <span className="relative z-10">Learn More</span>
-            </Link>
-          </div>
-        </div>
+    <main className="min-h-screen bg-background transition-colors duration-300 relative overflow-hidden">
+      {/* 3D Background Scene */}
+      <Hero3DScene />
+      
+      {/* Hero Section with 3D Content */}
+      <section className="relative min-h-screen flex items-center justify-center">
+        <Hero3DContent />
       </section>
 
-      {/* Stats Section */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 md:px-12 py-12">
+      {/* Stats Section with glassmorphism and parallax */}
+      <section 
+        className="relative z-20 mx-auto max-w-6xl px-6 md:px-12 py-12"
+        style={{
+          transform: 'translateZ(0)',
+          willChange: 'transform'
+        }}
+      >
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           <div 
-            className="text-center p-6 rounded-2xl transition-all duration-500 hover:scale-110 hover:shadow-xl cursor-pointer"
+            className="text-center p-6 rounded-2xl backdrop-blur-md border border-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-xl"
             style={{ 
-              backgroundColor: 'rgba(159, 220, 200, 0.2)',
-              transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth / 2) * 0.003}px, ${(mousePosition.y - window.innerHeight / 2) * 0.003}px)` : 'none',
+              backgroundColor: 'rgba(159, 220, 200, 0.15)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
             }}
           >
             <p 
-              className="text-4xl md:text-5xl font-bold"
-              style={{ color: '#9fdcc8' }}
+              className="text-4xl md:text-5xl font-bold text-primary"
+              style={{
+                textShadow: '0 0 20px rgba(159, 220, 200, 0.5)'
+              }}
             >
               50+
             </p>
-            <p 
-              className="text-sm md:text-base mt-2 font-medium"
-              style={{ color: '#4a3a4f' }}
-            >
+            <p className="text-sm md:text-base mt-2 font-medium text-muted-foreground">
               Active Clubs
             </p>
           </div>
           <div 
-            className="text-center p-6 rounded-2xl transition-all duration-500 hover:scale-110 hover:shadow-xl cursor-pointer"
+            className="text-center p-6 rounded-2xl backdrop-blur-md border border-secondary/20 transition-all duration-300 hover:scale-105 hover:shadow-xl"
             style={{ 
               backgroundColor: 'rgba(163, 99, 93, 0.15)',
-              transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth / 2) * 0.003}px, ${(mousePosition.y - window.innerHeight / 2) * 0.003}px)` : 'none',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
             }}
           >
             <p 
-              className="text-4xl md:text-5xl font-bold"
-              style={{ color: '#a3635d' }}
+              className="text-4xl md:text-5xl font-bold text-secondary"
+              style={{
+                textShadow: '0 0 20px rgba(163, 99, 93, 0.5)'
+              }}
             >
               2000+
             </p>
-            <p 
-              className="text-sm md:text-base mt-2 font-medium"
-              style={{ color: '#4a3a4f' }}
-            >
+            <p className="text-sm md:text-base mt-2 font-medium text-muted-foreground">
               Active Members
             </p>
           </div>
           <div 
-            className="text-center p-6 rounded-2xl col-span-2 md:col-span-1 transition-all duration-500 hover:scale-110 hover:shadow-xl cursor-pointer"
+            className="text-center p-6 rounded-2xl col-span-2 md:col-span-1 backdrop-blur-md border border-primary/20 transition-all duration-300 hover:scale-105 hover:shadow-xl"
             style={{ 
-              backgroundColor: 'rgba(159, 220, 200, 0.2)',
-              transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth / 2) * 0.003}px, ${(mousePosition.y - window.innerHeight / 2) * 0.003}px)` : 'none',
+              backgroundColor: 'rgba(159, 220, 200, 0.15)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
             }}
           >
             <p 
-              className="text-4xl md:text-5xl font-bold"
-              style={{ color: '#9fdcc8' }}
+              className="text-4xl md:text-5xl font-bold text-primary"
+              style={{
+                textShadow: '0 0 20px rgba(159, 220, 200, 0.5)'
+              }}
             >
               100%
             </p>
-            <p 
-              className="text-sm md:text-base mt-2 font-medium"
-              style={{ color: '#4a3a4f' }}
-            >
+            <p className="text-sm md:text-base mt-2 font-medium text-muted-foreground">
               Free to Join
             </p>
           </div>
         </div>
       </section>
 
-      {/* Testimonial Section */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 md:px-12 py-12 mb-16">
+      {/* Testimonial Section with glassmorphism and parallax */}
+      <section 
+        className="relative z-20 mx-auto max-w-6xl px-6 md:px-12 py-12 mb-16"
+        style={{
+          transform: 'translateZ(0)',
+          willChange: 'transform'
+        }}
+      >
         <div 
-          className="rounded-3xl p-8 md:p-12 border-2 transition-all duration-700 hover:shadow-2xl hover:scale-[1.01]"
+          className="rounded-3xl p-8 md:p-12 border-2 backdrop-blur-md"
           style={{ 
-            backgroundColor: '#22112a',
-            borderColor: '#9fdcc8',
-            transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth / 2) * 0.006}px, ${(mousePosition.y - window.innerHeight / 2) * 0.006}px)` : 'none',
+            backgroundColor: 'rgba(34, 17, 42, 0.8)',
+            borderColor: 'rgba(159, 220, 200, 0.5)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
           }}
         >
           <div className="flex gap-4 mb-6">
@@ -320,23 +153,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Floating Elements with cursor interaction */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      {/* Floating Elements - Background only */}
+      <div className="fixed inset-0 z-1 pointer-events-none overflow-hidden">
         <div 
-          className="absolute top-20 right-10 w-72 h-72 rounded-full blur-3xl transition-all duration-1000"
-          style={{ 
-            backgroundColor: '#9fdcc8',
-            opacity: 0.2,
-            transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x - window.innerWidth) * 0.05}px, ${(mousePosition.y - window.innerHeight) * 0.05}px)` : 'none',
-          }}
+          className="absolute top-20 right-10 w-72 h-72 rounded-full blur-3xl opacity-20"
+          style={{ backgroundColor: '#9fdcc8' }}
         ></div>
         <div 
-          className="absolute bottom-20 left-10 w-96 h-96 rounded-full blur-3xl transition-all duration-1000"
-          style={{ 
-            backgroundColor: '#a3635d',
-            opacity: 0.15,
-            transform: typeof window !== 'undefined' ? `translate(${(mousePosition.x) * 0.05}px, ${(mousePosition.y - window.innerHeight) * 0.05}px)` : 'none',
-          }}
+          className="absolute bottom-20 left-10 w-96 h-96 rounded-full blur-3xl opacity-15"
+          style={{ backgroundColor: '#a3635d' }}
         ></div>
       </div>
     </main>

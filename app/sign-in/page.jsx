@@ -32,7 +32,7 @@ export default function SignInPage() {
       localStorage.setItem("currentUser", JSON.stringify(user))
             window.dispatchEvent(new Event("auth-change"))
 
-      if (user.role === "admin") {
+      if (user.role === "admin" && user.assignedClubId) {
         router.push(`/club-admin/${user.assignedClubId}`)
       } else {
         router.push("/")

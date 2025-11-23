@@ -1,60 +1,110 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 export function CursorEffects() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const [isHovering, setIsHovering] = useState(false)
-
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
+    if (typeof window === "undefined") return
+
+    const cursor = document.createElement("div")
+    cursor.className = "custom-cursor"
+    cursor.style.cssText = `
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.1s ease-out;
+      mix-blend-mode: difference;
+      display: none;
+    `
+    document.body.appendChild(cursor)
+
+    const cursorFollower = document.createElement("div")
+    cursorFollower.className = "custom-cursor-follower"
+    cursorFollower.style.cssText = `
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.15s ease-out;
+      mix-blend-mode: difference;
+      display: none;
+    `
+    document.body.appendChild(cursorFollower)
+
+    let mouseX = 0
+    let mouseY = 0
+    let cursorX = 0
+    let cursorY = 0
+    let followerX = 0
+    let followerY = 0
+
+    const updateCursor = () => {
+      cursorX += (mouseX - cursorX) * 0.1
+      cursorY += (mouseY - cursorY) * 0.1
+      followerX += (mouseX - followerX) * 0.05
+      followerY += (mouseY - followerY) * 0.05
+
+      cursor.style.left = cursorX + "px"
+      cursor.style.top = cursorY + "px"
+      cursorFollower.style.left = followerX + "px"
+      cursorFollower.style.top = followerY + "px"
+
+      requestAnimationFrame(updateCursor)
     }
 
-    const handleMouseEnter = () => setIsHovering(true)
-    const handleMouseLeave = () => setIsHovering(false)
+    const handleMouseMove = (e) => {
+      mouseX = e.clientX
+      mouseY = e.clientY
+    }
 
-    window.addEventListener("mousemove", handleMouseMove)
+    const handleMouseEnter = () => {
+      cursor.style.display = "block"
+      cursorFollower.style.display = "block"
+    }
+
+    const handleMouseLeave = () => {
+      cursor.style.display = "none"
+      cursorFollower.style.display = "none"
+    }
+
+    const handleMouseOver = (e) => {
+      const target = e.target
+      if (
+        target.tagName === "BUTTON" ||
+        target.tagName === "A" ||
+        target.closest("button") ||
+        target.closest("a")
+      ) {
+        cursor.style.transform = "scale(1.5)"
+        cursor.style.borderColor = "var(--primary)"
+      } else {
+        cursor.style.transform = "scale(1)"
+      }
+    }
+
+    document.addEventListener("mousemove", handleMouseMove)
     document.addEventListener("mouseenter", handleMouseEnter)
     document.addEventListener("mouseleave", handleMouseLeave)
+    document.addEventListener("mouseover", handleMouseOver)
+    updateCursor()
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mousemove", handleMouseMove)
       document.removeEventListener("mouseenter", handleMouseEnter)
       document.removeEventListener("mouseleave", handleMouseLeave)
+      document.removeEventListener("mouseover", handleMouseOver)
+      cursor.remove()
+      cursorFollower.remove()
     }
   }, [])
 
-  return (
-    <>
-      {/* Cursor follower */}
-      <div
-        className="fixed pointer-events-none z-50 transition-all duration-300 ease-out"
-        style={{
-          left: `${mousePosition.x}px`,
-          top: `${mousePosition.y}px`,
-          transform: "translate(-50%, -50%)",
-          opacity: isHovering ? 0.3 : 0,
-        }}
-      >
-        <div
-          className="w-32 h-32 rounded-full blur-3xl transition-all duration-500"
-          style={{
-            background: "radial-gradient(circle, #9fdcc8 0%, #a3635d 50%, transparent 70%)",
-            transform: `scale(${isHovering ? 1.5 : 1})`,
-          }}
-        />
-      </div>
-
-      {/* Dynamic gradient background */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-1000"
-        style={{
-          opacity: isHovering ? 0.4 : 0.2,
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(159, 220, 200, 0.15), rgba(163, 99, 93, 0.1), transparent 40%)`,
-        }}
-      />
-    </>
-  )
+  return null
 }
 

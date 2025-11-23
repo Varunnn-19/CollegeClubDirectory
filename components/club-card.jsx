@@ -26,11 +26,7 @@ export function ClubCard({ club, onOpen }) {
 
   return (
     <Card 
-      className="hover:shadow-lg transition-all transform hover:-translate-y-1 border-2"
-      style={{ 
-        backgroundColor: '#fdfceb',
-        borderColor: '#9fdcc8'
-      }}
+      className="hover-lift hover-glow animate-fade-in transition-all duration-300 border-2 cursor-pointer"
     >
       <CardHeader className="flex flex-row items-center gap-3">
         <img
@@ -42,35 +38,17 @@ export function ClubCard({ club, onOpen }) {
           style={{ borderColor: '#9fdcc8' }}
         />
         <div className="flex-1">
-          <CardTitle className="text-base font-bold" style={{ color: '#22112a' }}>{club.name}</CardTitle>
+          <CardTitle className="text-base font-bold text-foreground">{club.name}</CardTitle>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Badge 
-              variant="secondary"
-              style={{ 
-                backgroundColor: '#9fdcc8',
-                color: '#22112a'
-              }}
-            >
+            <Badge variant="secondary" className="transition-all duration-300 hover:scale-105">
               {club.category}
             </Badge>
-            <Badge
-              style={{ 
-                backgroundColor: '#a3635d',
-                color: '#fdfceb'
-              }}
-            >
+            <Badge className="transition-all duration-300 hover:scale-105">
               {club.membershipType}
             </Badge>
             {rating > 0 && (
-              <Badge 
-                variant="outline" 
-                className="gap-1"
-                style={{ 
-                  borderColor: '#a3635d',
-                  color: '#a3635d'
-                }}
-              >
-                <Star className="h-3 w-3 fill-current" style={{ color: '#a3635d' }} />
+              <Badge variant="outline" className="gap-1 transition-all duration-300 hover:scale-105">
+                <Star className="h-3 w-3 fill-current" />
                 {rating}
               </Badge>
             )}
@@ -78,26 +56,20 @@ export function ClubCard({ club, onOpen }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm" style={{ color: '#4a3a4f' }}>{club.shortDescription}</p>
-        <div className="flex items-center justify-between text-xs" style={{ color: '#4a3a4f' }}>
+        <p className="text-sm text-muted-foreground">{club.shortDescription}</p>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span className="font-medium">{memberCount} members</span>
           <div className="flex items-center gap-2">
             <button
-              className="text-sm font-medium transition-colors hover:underline"
-              style={{ color: '#9fdcc8' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#a3635d'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#9fdcc8'}
+              className="text-sm font-medium text-primary transition-all duration-300 hover:underline hover:scale-105 active:scale-95"
               onClick={() => onOpen?.(club)}
               aria-label={`Quick view ${club.name}`}
             >
               Quick view
             </button>
-            <span style={{ color: '#9fdcc8' }}>•</span>
+            <span className="text-primary">•</span>
             <Link
-              className="text-sm font-medium transition-colors hover:underline"
-              style={{ color: '#9fdcc8' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#a3635d'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#9fdcc8'}
+              className="text-sm font-medium text-primary transition-all duration-300 hover:underline hover:scale-105 active:scale-95"
               href={`/clubs/${club.slug}`}
               aria-label={`View details page for ${club.name}`}
             >

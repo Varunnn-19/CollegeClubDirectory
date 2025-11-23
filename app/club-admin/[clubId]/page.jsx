@@ -33,7 +33,7 @@ import { Users, Calendar, Bell, Settings, X, Plus, Edit, Trash2 } from "lucide-r
 export default function ClubAdminPage() {
   const router = useRouter()
   const params = useParams()
-  const clubId = params.clubId
+  const clubId = params?.clubId
 
   const [currentUser, setCurrentUser] = useState(null)
   const [club, setClub] = useState(null)
@@ -73,6 +73,11 @@ export default function ClubAdminPage() {
   })
 
   useEffect(() => {
+    if (!clubId) {
+      router.push("/")
+      return
+    }
+    
     const user = JSON.parse(localStorage.getItem("currentUser") || "null")
 
     if (!user || user.role !== "admin" || user.assignedClubId !== clubId) {
@@ -99,18 +104,16 @@ export default function ClubAdminPage() {
       membershipType: clubData.membershipType,
     })
 
-    loadData(clubData)
+    loadData()
     setLoading(false)
   }, [clubId, router])
 
-  const loadData = (clubDataParam = null) => {
+  const loadData = () => {
     const allMembers = getMembershipsByClub(clubId)
     setMembers(allMembers)
 
     const clubEvents = getEventsByClub(clubId)
-    // Use clubDataParam if provided (for initial load), otherwise use current club state
-    const defaultEvents = clubDataParam?.events || club?.events || []
-    setEvents(clubEvents.length > 0 ? clubEvents : defaultEvents)
+    setEvents(clubEvents.length > 0 ? clubEvents : club?.events || [])
 
     const clubAnnouncements = getAnnouncementsByClub(clubId)
     setAnnouncements(clubAnnouncements)
