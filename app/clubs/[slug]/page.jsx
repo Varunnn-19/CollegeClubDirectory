@@ -237,7 +237,7 @@ export default function ClubDetailPage() {
           <h2 className="text-lg font-medium mb-3">Announcements</h2>
           <div className="space-y-2">
             {announcements.slice(0, 3).map((announcement) => (
-              <Card key={announcement.id} className="bg-primary/10 dark:bg-primary/20 border-primary/20">
+              <Card key={announcement.id} className="bg-primary/10 border-primary/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{announcement.title}</CardTitle>
                   <p className="text-xs text-muted-foreground">

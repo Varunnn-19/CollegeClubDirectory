@@ -125,7 +125,7 @@ export default function CreateClubPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle className="text-primary">Club Created Successfully!</CardTitle>
@@ -137,7 +137,7 @@ export default function CreateClubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background dark:bg-background">
+    <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-4 py-8">
         <div className="mb-6 flex items-center gap-4">
           <Link href="/clubs">
@@ -157,7 +157,7 @@ export default function CreateClubPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-4 bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 rounded text-destructive">{error}</div>
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded text-destructive">{error}</div>
               )}
 
               <div>

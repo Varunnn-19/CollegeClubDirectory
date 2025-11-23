@@ -4,7 +4,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { BookOpen } from "lucide-react"
@@ -108,7 +107,7 @@ export function SiteHeader() {
 
   return (
     <header 
-      className="border-b z-[9999] fixed top-0 left-0 right-0 backdrop-blur-md bg-background/95 dark:bg-background/95 border-border transition-colors duration-300 shadow-sm"
+      className="border-b z-[9999] fixed top-0 left-0 right-0 backdrop-blur-md bg-background/95 border-border transition-colors duration-300 shadow-sm"
       style={{ 
         position: 'fixed',
         top: 0,
@@ -202,7 +201,6 @@ export function SiteHeader() {
             </Link>
           )}
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           {mounted && currentUser ? (
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-foreground">{currentUser.name}</span>

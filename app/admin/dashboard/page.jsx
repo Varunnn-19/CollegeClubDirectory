@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background dark:bg-background">
+    <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
                       <td className="py-3">
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
-                            user.role === "admin" ? "bg-destructive/20 text-destructive dark:bg-destructive/30" : "bg-primary/20 text-primary dark:bg-primary/30"
+                            user.role === "admin" ? "bg-destructive/20 text-destructive" : "bg-primary/20 text-primary"
                           }`}
                         >
                           {user.role === "admin" ? "Admin" : "User"}

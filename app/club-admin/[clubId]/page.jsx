@@ -274,7 +274,7 @@ export default function ClubAdminPage() {
   const pendingMembers = members.filter((m) => m.status === "pending")
 
   return (
-    <div className="min-h-screen bg-background dark:bg-background">
+    <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -287,9 +287,9 @@ export default function ClubAdminPage() {
         </div>
 
         {success && (
-          <div className="mb-6 p-4 bg-primary/10 dark:bg-primary/20 border border-primary/20 rounded text-primary">{success}</div>
+          <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded text-primary">{success}</div>
         )}
-        {error && <div className="mb-6 p-4 bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 rounded text-destructive">{error}</div>}
+        {error && <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded text-destructive">{error}</div>}
 
         <Tabs defaultValue="members" className="mt-6">
           <TabsList>
@@ -326,7 +326,7 @@ export default function ClubAdminPage() {
                         const users = JSON.parse(localStorage.getItem("users") || "[]")
                         const user = users.find((u) => u.id === member.userId)
                         return (
-                          <Card key={member.id} className="bg-secondary/10 dark:bg-secondary/20 border-secondary/20">
+                          <Card key={member.id} className="bg-secondary/10 border-secondary/20">
                             <CardContent className="pt-6">
                               <div className="flex items-center justify-between">
                                 <div>
@@ -485,7 +485,7 @@ export default function ClubAdminPage() {
                 ) : (
                   <div className="space-y-3">
                     {announcements.map((announcement) => (
-                      <Card key={announcement.id} className="bg-primary/10 dark:bg-primary/20 border-primary/20">
+                      <Card key={announcement.id} className="bg-primary/10 border-primary/20">
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
