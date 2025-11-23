@@ -112,18 +112,12 @@ export default function ClubsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 md:px-6" style={{ backgroundColor: '#fdfceb' }}>
+    <main className="mx-auto max-w-6xl px-4 py-8 md:px-6 bg-background">
       <section className="mb-6">
-        <h1 
-          className="text-balance text-2xl font-semibold tracking-tight md:text-3xl"
-          style={{ color: '#22112a' }}
-        >
+        <h1 className="text-balance text-2xl font-semibold tracking-tight md:text-3xl text-foreground">
           Explore Student Clubs
         </h1>
-        <p 
-          className="text-pretty text-sm md:text-base"
-          style={{ color: '#4a3a4f' }}
-        >
+        <p className="text-pretty text-sm md:text-base text-muted-foreground">
           Browse clubs by category and membership. Use quick view or open a full details page.
         </p>
       </section>
@@ -144,10 +138,7 @@ export default function ClubsPage() {
       />
 
       <section className="mt-6" aria-label="Club results">
-        <p 
-          className="mb-3 text-sm font-medium"
-          style={{ color: '#4a3a4f' }}
-        >
+        <p className="mb-3 text-sm font-medium text-foreground">
           Showing {filtered.length} result{filtered.length === 1 ? "" : "s"}
         </p>
 

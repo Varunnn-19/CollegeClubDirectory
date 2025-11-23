@@ -51,11 +51,7 @@ export function SearchFilters({
   return (
     <section 
       aria-label="Search and filters" 
-      className="rounded-xl border-2 p-6 shadow-sm"
-      style={{ 
-        backgroundColor: '#fdfceb',
-        borderColor: '#9fdcc8'
-      }}
+      className="rounded-xl border-2 p-6 shadow-sm bg-card border-primary/20"
     >
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">

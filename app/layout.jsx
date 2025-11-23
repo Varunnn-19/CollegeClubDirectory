@@ -14,7 +14,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen transition-colors duration-300">
+      <body className="min-h-screen bg-background text-foreground transition-colors duration-300">
         <Suspense fallback={<div>Loading...</div>}>
           <CursorEffects />
           <SiteHeader />
