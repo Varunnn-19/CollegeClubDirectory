@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select"
 import { ArrowLeft } from "lucide-react"
 import { saveClub } from "@/lib/data-utils"
+import { apiRequest } from "@/lib/api-client"
 
 export default function CreateClubPage() {
   const router = useRouter()
@@ -23,6 +24,7 @@ export default function CreateClubPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -61,12 +63,14 @@ export default function CreateClubPage() {
       .replace(/(^-|-$)/g, "")
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
+    setSubmitting(true)
 
     if (!formData.name || !formData.shortDescription || !formData.fullDescription || !formData.category) {
       setError("Please fill in all required fields")
+      setSubmitting(false)
       return
     }
 
@@ -94,24 +98,23 @@ export default function CreateClubPage() {
         createdAt: new Date().toISOString(),
       }
 
-      saveClub(club)
+      const createdClub = await saveClub(club)
 
-      // Auto-assign user as admin of the club they created
-      const users = JSON.parse(localStorage.getItem("users") || "[]")
-      const userIndex = users.findIndex((u) => u.id === currentUser.id)
-      if (userIndex !== -1) {
-        users[userIndex].role = "admin"
-        users[userIndex].assignedClubId = club.id
-        localStorage.setItem("users", JSON.stringify(users))
-        localStorage.setItem("currentUser", JSON.stringify(users[userIndex]))
-      }
+      // Promote user to admin for the created club
+      const { user } = await apiRequest(`/users/${currentUser.id}`, {
+        method: "PATCH",
+        body: { role: "admin", assignedClubId: createdClub.id },
+      })
+      localStorage.setItem("currentUser", JSON.stringify(user))
 
       setSuccess(true)
       setTimeout(() => {
-        router.push(`/club-admin/${club.id}`)
+        router.push(`/club-admin/${createdClub.id}`)
       }, 2000)
     } catch (err) {
-      setError("Failed to create club. Please try again.")
+      setError(err.message || "Failed to create club. Please try again.")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -284,8 +287,8 @@ export default function CreateClubPage() {
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
-                  Create Club
+                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700" disabled={submitting}>
+                  {submitting ? "Creating..." : "Create Club"}
                 </Button>
                 <Link href="/clubs">
                   <Button type="button" variant="outline">

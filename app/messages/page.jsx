@@ -24,7 +24,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const init = async () => {
       const user = JSON.parse(localStorage.getItem("currentUser") || "null")
       if (!user) {
         router.push("/sign-in")
@@ -32,52 +32,47 @@ export default function MessagesPage() {
       }
 
       setCurrentUser(user)
-      loadConversations()
+      await loadConversations(user.id)
       setLoading(false)
     }
+
+    init()
   }, [router])
 
-  const loadConversations = () => {
-    if (!currentUser) return
-    const convs = getConversations(currentUser.id)
+  const loadConversations = async (userId = currentUser?.id) => {
+    if (!userId) return
+    const convs = await getConversations(userId)
     setConversations(convs)
   }
 
-  const loadMessages = (otherUserId) => {
+  const loadMessages = async (otherUserId) => {
     if (!currentUser) return
-    const msgs = getMessagesBetweenUsers(currentUser.id, otherUserId)
+    const msgs = await getMessagesBetweenUsers(currentUser.id, otherUserId)
     setMessages(msgs)
-    markMessagesAsRead(otherUserId, currentUser.id)
-    loadConversations() // Refresh to update unread counts
+    await markMessagesAsRead(otherUserId, currentUser.id)
+    await loadConversations()
   }
 
-  const handleSelectUser = (userId, userName) => {
+  const handleSelectUser = async (userId, userName) => {
     setSelectedUser({ id: userId, name: userName })
-    loadMessages(userId)
+    await loadMessages(userId)
   }
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault()
     if (!newMessage.trim() || !currentUser || !selectedUser) return
 
-    const users = JSON.parse(localStorage.getItem("users") || "[]")
-    const receiver = users.find((u) => u.id === selectedUser.id)
-
     const message = {
-      id: Date.now().toString(),
       senderId: currentUser.id,
       receiverId: selectedUser.id,
       senderName: currentUser.name,
-      receiverName: receiver?.name || selectedUser.name,
+      receiverName: selectedUser.name,
       content: newMessage.trim(),
-      read: false,
-      createdAt: new Date().toISOString(),
     }
 
-    saveMessage(message)
+    await saveMessage(message)
     setNewMessage("")
-    loadMessages(selectedUser.id)
-    loadConversations()
+    await loadMessages(selectedUser.id)
   }
 
   if (loading) {
