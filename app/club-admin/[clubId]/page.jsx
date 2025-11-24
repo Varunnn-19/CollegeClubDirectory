@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -116,9 +116,9 @@ export default function ClubAdminPage() {
     }
 
     initialize()
-  }, [clubId, router])
+  }, [clubId, router, loadData])
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [allMembers, clubEvents, clubAnnouncements] = await Promise.all([
         getMembershipsByClub(clubId),
@@ -132,7 +132,7 @@ export default function ClubAdminPage() {
       console.error(err)
       setError("Failed to load club data.")
     }
-  }
+  }, [clubId])
 
   const handleChange = (e) => {
     const { name, value } = e.target

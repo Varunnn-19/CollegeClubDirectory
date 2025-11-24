@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,6 +22,28 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
+  const currentUserId = currentUser?.id
+
+  const loadConversations = useCallback(
+    async (userId) => {
+      const targetId = userId ?? currentUserId
+      if (!targetId) return
+      const convs = await getConversations(targetId)
+      setConversations(convs)
+    },
+    [currentUserId]
+  )
+
+  const loadMessages = useCallback(
+    async (otherUserId) => {
+      if (!currentUserId) return
+      const msgs = await getMessagesBetweenUsers(currentUserId, otherUserId)
+      setMessages(msgs)
+      await markMessagesAsRead(otherUserId, currentUserId)
+      await loadConversations()
+    },
+    [currentUserId, loadConversations]
+  )
 
   useEffect(() => {
     const init = async () => {
@@ -37,21 +59,7 @@ export default function MessagesPage() {
     }
 
     init()
-  }, [router])
-
-  const loadConversations = async (userId = currentUser?.id) => {
-    if (!userId) return
-    const convs = await getConversations(userId)
-    setConversations(convs)
-  }
-
-  const loadMessages = async (otherUserId) => {
-    if (!currentUser) return
-    const msgs = await getMessagesBetweenUsers(currentUser.id, otherUserId)
-    setMessages(msgs)
-    await markMessagesAsRead(otherUserId, currentUser.id)
-    await loadConversations()
-  }
+  }, [router, loadConversations])
 
   const handleSelectUser = async (userId, userName) => {
     setSelectedUser({ id: userId, name: userName })
