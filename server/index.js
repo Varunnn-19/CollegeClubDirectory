@@ -15,6 +15,7 @@ import messagesRoutes from "./routes/messages.js"
 
 dotenv.config({ path: ".env.local" })
 dotenv.config()
+dotenv.config({ path: "database.env" })
 
 const app = express()
 
