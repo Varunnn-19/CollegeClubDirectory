@@ -1,10 +1,9 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Star } from "lucide-react"
-import { getMembershipsByClub, getAverageRating, getReviewsByClub } from "@/lib/data-utils"
 
 /**
  * @param {Object} props
@@ -12,20 +11,12 @@ import { getMembershipsByClub, getAverageRating, getReviewsByClub } from "@/lib/
  * @param {Function} [props.onOpen]
  */
 export function ClubCard3D({ club, onOpen }) {
-  const [memberCount, setMemberCount] = useState(0)
-  const [rating, setRating] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const [transform, setTransform] = useState({ rotateX: 0, rotateY: 0, scale: 1 })
   const cardRef = useRef(null)
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const members = getMembershipsByClub(club.id).filter((m) => m.status === "active")
-      setMemberCount(members.length)
-      const avgRating = getAverageRating(club.id)
-      setRating(parseFloat(avgRating) || 0)
-    }
-  }, [club.id])
+  const memberCount = club.stats?.memberCount || 0
+  const rating = club.stats?.rating || 0
 
   const handleMouseMove = (e) => {
     if (!cardRef.current || !isHovered) return

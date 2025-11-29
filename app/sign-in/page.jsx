@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { apiRequest } from "@/lib/api-client"
 import { Input } from "@/components/ui/input"
 
 export default function SignInPage() {
@@ -20,14 +21,10 @@ export default function SignInPage() {
     setLoading(true)
 
     try {
-      const users = JSON.parse(localStorage.getItem("users") || "[]")
-      const user = users.find((u) => u.email === email && u.password === password)
-
-      if (!user) {
-        setError("Invalid email or password")
-        setLoading(false)
-        return
-      }
+      const { user } = await apiRequest("/users/login", {
+        method: "POST",
+        body: { email, password },
+      })
 
       localStorage.setItem("currentUser", JSON.stringify(user))
       
@@ -43,7 +40,7 @@ export default function SignInPage() {
         router.push("/")
       }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      setError(err.message || "An error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
