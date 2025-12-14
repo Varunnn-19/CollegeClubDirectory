@@ -22,14 +22,22 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const currentUserId = currentUser?.id
 
   const loadConversations = useCallback(
     async (userId) => {
       const targetId = userId ?? currentUserId
       if (!targetId) return
-      const convs = await getConversations(targetId)
-      setConversations(convs)
+      try {
+        const convs = await getConversations(targetId)
+        setConversations(convs || [])
+        setError("")
+      } catch (error) {
+        console.error("Failed to load conversations:", error)
+        setConversations([])
+        setError("Failed to load conversations. Please refresh the page.")
+      }
     },
     [currentUserId]
   )
@@ -37,25 +45,45 @@ export default function MessagesPage() {
   const loadMessages = useCallback(
     async (otherUserId) => {
       if (!currentUserId) return
-      const msgs = await getMessagesBetweenUsers(currentUserId, otherUserId)
-      setMessages(msgs)
-      await markMessagesAsRead(otherUserId, currentUserId)
-      await loadConversations()
+      try {
+        const msgs = await getMessagesBetweenUsers(currentUserId, otherUserId)
+        setMessages(msgs || [])
+        try {
+          await markMessagesAsRead(otherUserId, currentUserId)
+        } catch (readError) {
+          console.error("Failed to mark messages as read:", readError)
+        }
+        await loadConversations()
+      } catch (error) {
+        console.error("Failed to load messages:", error)
+        setMessages([])
+      }
     },
     [currentUserId, loadConversations]
   )
 
   useEffect(() => {
     const init = async () => {
-      const user = JSON.parse(localStorage.getItem("currentUser") || "null")
-      if (!user) {
-        router.push("/sign-in")
-        return
-      }
+      try {
+        const user = JSON.parse(localStorage.getItem("currentUser") || "null")
+        if (!user) {
+          router.push("/sign-in")
+          return
+        }
 
-      setCurrentUser(user)
-      await loadConversations(user.id)
-      setLoading(false)
+        if (!user.id) {
+          console.error("User ID is missing")
+          setLoading(false)
+          return
+        }
+
+        setCurrentUser(user)
+        await loadConversations(user.id)
+      } catch (error) {
+        console.error("Failed to initialize messages:", error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     init()
@@ -70,21 +98,32 @@ export default function MessagesPage() {
     e.preventDefault()
     if (!newMessage.trim() || !currentUser || !selectedUser) return
 
-    const message = {
-      senderId: currentUser.id,
-      receiverId: selectedUser.id,
-      senderName: currentUser.name,
-      receiverName: selectedUser.name,
-      content: newMessage.trim(),
-    }
+    try {
+      const message = {
+        senderId: currentUser.id,
+        receiverId: selectedUser.id,
+        senderName: currentUser.name,
+        receiverName: selectedUser.name,
+        content: newMessage.trim(),
+      }
 
-    await saveMessage(message)
-    setNewMessage("")
-    await loadMessages(selectedUser.id)
+      await saveMessage(message)
+      setNewMessage("")
+      await loadMessages(selectedUser.id)
+    } catch (error) {
+      console.error("Failed to send message:", error)
+      alert("Failed to send message. Please try again.")
+    }
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24">
+        <div className="text-center">
+          <p className="text-lg">Loading messages...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!currentUser) {
@@ -104,7 +143,13 @@ export default function MessagesPage() {
           <h1 className="text-3xl font-bold">Messages</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
+        {error && (
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[calc(100vh-200px)]">
           {/* Conversations List */}
           <div className="border rounded-lg bg-card overflow-y-auto">
             <div className="p-4 border-b">
@@ -112,7 +157,8 @@ export default function MessagesPage() {
             </div>
             {conversations.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                No conversations yet. Start messaging other users!
+                <p>No conversations yet.</p>
+                <p className="mt-2">Start messaging other users from their profile pages!</p>
               </div>
             ) : (
               <div className="divide-y">

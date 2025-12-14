@@ -85,8 +85,12 @@ export default function ClubDetailPage() {
         }
         setError("")
       } catch (err) {
+        console.error("Error loading club:", err)
         setError(err.message || "Unable to load club.")
-        router.push("/clubs")
+        // Don't redirect immediately, show error first
+        setTimeout(() => {
+          router.push("/clubs")
+        }, 2000)
       } finally {
         if (mounted) setLoading(false)
       }

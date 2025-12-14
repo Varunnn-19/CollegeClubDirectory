@@ -11,6 +11,7 @@ import { Star } from "lucide-react"
  * @param {Function} [props.onOpen]
  */
 export function ClubCard3D({ club, onOpen }) {
+  const router = useRouter()
   const [isHovered, setIsHovered] = useState(false)
   const [transform, setTransform] = useState({ rotateX: 0, rotateY: 0, scale: 1 })
   const cardRef = useRef(null)
@@ -70,6 +71,7 @@ export function ClubCard3D({ club, onOpen }) {
             ? `0 ${20 + transform.rotateX * 2}px ${40 + Math.abs(transform.rotateY) * 2}px rgba(0, 0, 0, 0.3),
                0 0 30px rgba(159, 220, 200, 0.3)`
             : "0 4px 6px rgba(0, 0, 0, 0.1)",
+          pointerEvents: "auto",
         }}
       >
         {/* 3D Glow Effect */}
@@ -157,7 +159,7 @@ export function ClubCard3D({ club, onOpen }) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 relative z-10">
+          <CardContent className="space-y-3 relative z-10" style={{ pointerEvents: 'auto' }}>
             <p
               className="text-sm text-muted-foreground line-clamp-2"
               style={{
@@ -173,19 +175,28 @@ export function ClubCard3D({ club, onOpen }) {
               }}
             >
               <span className="font-medium">{memberCount} members</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}>
                 <button
                   className="text-sm font-medium text-primary transition-all duration-300 hover:underline hover:scale-110 active:scale-95"
-                  onClick={() => onOpen?.(club)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onOpen?.(club)
+                  }}
                   aria-label={`Quick view ${club.name}`}
+                  style={{ position: 'relative', zIndex: 100 }}
                 >
                   Quick view
                 </button>
-                <span className="text-primary">•</span>
+                <span className="text-primary" style={{ position: 'relative', zIndex: 100 }}>•</span>
                 <Link
                   className="text-sm font-medium text-primary transition-all duration-300 hover:underline hover:scale-110 active:scale-95"
-                  href={`/clubs/${club.slug}`}
+                  href={`/clubs/${club.slug || club.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
                   aria-label={`View details page for ${club.name}`}
+                  style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}
                 >
                   View details
                 </Link>
