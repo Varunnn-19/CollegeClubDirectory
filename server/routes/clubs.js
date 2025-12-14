@@ -17,8 +17,10 @@ const slugify = (value = "") =>
 
 router.get(
   "/",
-  asyncHandler(async (_req, res) => {
-    const clubs = await Club.find().sort({ name: 1 }).lean()
+  asyncHandler(async (req, res) => {
+    // Only show approved clubs to regular users, admins can see all
+    const statusFilter = req.query.status || "approved"
+    const clubs = await Club.find(statusFilter === "all" ? {} : { status: statusFilter }).sort({ name: 1 }).lean()
     const stats = await buildClubStats(clubs.map((club) => club._id))
 
     const payload = clubs.map((club) => ({
@@ -40,6 +42,11 @@ router.get(
   asyncHandler(async (req, res) => {
     const club = await Club.findOne({ slug: req.params.slug })
     if (!club) {
+      return res.status(404).json({ message: "Club not found." })
+    }
+    
+    // Only show approved clubs to regular users
+    if (club.status !== "approved") {
       return res.status(404).json({ message: "Club not found." })
     }
 

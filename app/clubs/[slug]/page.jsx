@@ -207,74 +207,80 @@ export default function ClubDetailPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 md:px-6">
-      <nav aria-label="Breadcrumb" className="mb-4 text-sm">
-        <Link href="/" className="underline underline-offset-4 hover:text-primary">
-          Home
-        </Link>
-        <span className="mx-2 text-muted-foreground">/</span>
-        <Link href="/clubs" className="underline underline-offset-4 hover:text-primary">
-          Clubs
-        </Link>
-        <span className="mx-2 text-muted-foreground">/</span>
-        <span className="text-muted-foreground">{club.name}</span>
-      </nav>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section - Completely separate from header */}
+      <section className="pt-32 pb-12 border-b bg-gradient-to-b from-background to-muted/20">
+        <div className="mx-auto max-w-6xl px-4 md:px-6">
+          <nav aria-label="Breadcrumb" className="mb-6 text-sm">
+            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+              Home
+            </Link>
+            <span className="mx-2 text-muted-foreground">/</span>
+            <Link href="/clubs" className="text-muted-foreground hover:text-foreground transition-colors">
+              Clubs
+            </Link>
+            <span className="mx-2 text-muted-foreground">/</span>
+            <span className="text-foreground">{club.name}</span>
+          </nav>
 
-      <header className="mb-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-3">
-            <img
-              src={club.logoUrl || "/placeholder.svg"}
-              alt={`${club.name} logo`}
-              width={72}
-              height={72}
-              className="h-16 w-16 rounded-md border object-cover"
-            />
-            <div>
-              <h1 className="text-balance text-2xl font-semibold tracking-tight md:text-3xl">{club.name}</h1>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">{club.category}</Badge>
-                <Badge>{club.membershipType}</Badge>
-                {rating > 0 && (
-                  <Badge variant="outline" className="gap-1">
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    {rating} ({reviews.length})
-                  </Badge>
-                )}
-              </div>
+          <div className="flex flex-col gap-6 md:flex-row md:items-start">
+            <div className="flex-shrink-0">
+              <img
+                src={club.logoUrl || "/placeholder.svg"}
+                alt={`${club.name} logo`}
+                width={120}
+                height={120}
+                className="h-24 w-24 md:h-32 md:w-32 rounded-lg border-2 object-cover shadow-lg"
+              />
             </div>
-          </div>
-          {currentUser && (
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row lg:justify-end">
-              {!isMember ? (
-                <Button onClick={handleJoinClub} className="w-full sm:w-auto">
-                  {club.membershipType === "Open" ? "Join Club" : "Request to Join"}
-                </Button>
-              ) : (
-                <Button variant="outline" onClick={handleLeaveClub} className="w-full sm:w-auto">
-                  Leave Club
-                </Button>
+            
+            <div className="flex-1 space-y-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">{club.name}</h1>
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <Badge variant="secondary" className="text-xs">{club.category}</Badge>
+                  <Badge variant="outline" className="text-xs">{club.membershipType}</Badge>
+                  {rating > 0 && (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      {rating} ({reviews.length})
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-muted-foreground text-lg leading-relaxed">{club.shortDescription}</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-6 pt-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span>{memberCount} members</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span>{rating > 0 ? `${rating} rating` : "No reviews yet"}</span>
+                </div>
+              </div>
+
+              {currentUser && (
+                <div className="pt-2">
+                  {!isMember ? (
+                    <Button onClick={handleJoinClub} size="lg" className="bg-primary hover:bg-primary/90">
+                      {club.membershipType === "Open" ? "Join Club" : "Request to Join"}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={handleLeaveClub} size="lg">
+                      Leave Club
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:max-w-xl">
-          <div className="rounded-lg border bg-card/40 p-4">
-            <p className="text-sm text-muted-foreground">Active Members</p>
-            <p className="text-2xl font-semibold flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              {memberCount}
-            </p>
-          </div>
-          <div className="rounded-lg border bg-card/40 p-4">
-            <p className="text-sm text-muted-foreground">Community Rating</p>
-            <p className="text-2xl font-semibold flex items-center gap-2">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              {rating > 0 ? `${rating} (${reviews.length})` : "No reviews yet"}
-            </p>
           </div>
         </div>
-      </header>
+      </section>
+
+      {/* Main Content */}
+      <main className="mx-auto max-w-6xl px-4 py-12 md:px-6">
 
       {announcements.length > 0 && (
         <section className="mb-6">
@@ -525,6 +531,7 @@ export default function ClubDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </main>
+      </main>
+    </div>
   )
 }

@@ -15,6 +15,17 @@ router.post(
       return res.status(400).json({ message: "Missing required fields." })
     }
 
+    // Email domain validation
+    if (!email.endsWith("@bmsce.ac.in")) {
+      return res.status(400).json({ message: "Email must be from @bmsce.ac.in domain." })
+    }
+
+    // Password validation: at least one uppercase, one special character, and one number
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ message: "Password must contain at least one uppercase letter, one special character, and one number." })
+    }
+
     const existing = await User.findOne({ email })
     if (existing) {
       return res.status(400).json({ message: "Email already registered." })
@@ -43,6 +54,11 @@ router.post(
 
     if (!email || !password) {
       return res.status(400).json({ message: "Missing email or password." })
+    }
+
+    // Email domain validation
+    if (!email.endsWith("@bmsce.ac.in")) {
+      return res.status(400).json({ message: "Email must be from @bmsce.ac.in domain." })
     }
 
     const user = await User.findOne({ email })

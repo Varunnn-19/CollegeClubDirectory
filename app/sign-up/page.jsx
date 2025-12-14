@@ -73,6 +73,21 @@ export default function SignUpPage() {
       return
     }
 
+    // Email domain validation
+    if (!formData.email.endsWith("@bmsce.ac.in")) {
+      setError("Email must be from @bmsce.ac.in domain")
+      setLoading(false)
+      return
+    }
+
+    // Password requirements: at least one uppercase, one special character, and one number
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must contain at least one uppercase letter, one special character, and one number")
+      setLoading(false)
+      return
+    }
+
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters")
       setLoading(false)
@@ -147,11 +162,12 @@ export default function SignUpPage() {
               <Input
                 type="email"
                 name="email"
-                placeholder="john@college.edu"
+                placeholder="john@bmsce.ac.in"
                 value={formData.email}
                 onChange={handleChange}
                 required
               />
+              <p className="text-xs text-muted-foreground">Only @bmsce.ac.in emails are allowed</p>
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">USN (University Serial Number)</label>
@@ -234,6 +250,7 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 required
               />
+              <p className="text-xs text-muted-foreground">Must contain: uppercase letter, special character, and number</p>
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Confirm Password</label>

@@ -100,17 +100,13 @@ export default function CreateClubPage() {
 
       const createdClub = await saveClub(club)
 
-      // Promote user to admin for the created club
-      const { user } = await apiRequest(`/users/${currentUser.id}`, {
-        method: "PATCH",
-        body: { role: "admin", assignedClubId: createdClub.id },
-      })
-      localStorage.setItem("currentUser", JSON.stringify(user))
+      // Note: User will be promoted to admin only after club is approved
+      // This will be handled in the admin approval process
 
       setSuccess(true)
       setTimeout(() => {
-        router.push(`/club-admin/${createdClub.id}`)
-      }, 2000)
+        router.push("/")
+      }, 3000)
     } catch (err) {
       setError(err.message || "Failed to create club. Please try again.")
     } finally {
@@ -128,11 +124,14 @@ export default function CreateClubPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background pt-20">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-primary">Club Created Successfully!</CardTitle>
-            <CardDescription>Redirecting to your club admin panel...</CardDescription>
+            <CardTitle className="text-primary">Club Request Submitted!</CardTitle>
+            <CardDescription>
+              Your club request has been submitted and is pending approval from the admin.
+              You will be notified once it's approved. Redirecting to home...
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
