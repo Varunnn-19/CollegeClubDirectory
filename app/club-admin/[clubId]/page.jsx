@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -17,17 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { clubs } from "@/lib/clubs"
 import {
-  getClubs,
   getMembershipsByClub,
-  updateMembership,
+  saveMembership,
   getEventsByClub,
   saveEvent,
   deleteEvent,
   getAnnouncementsByClub,
   saveAnnouncement,
   deleteAnnouncement,
-  updateClub,
 } from "@/lib/data-utils"
 import { Users, Calendar, Bell, Settings, X, Plus, Edit, Trash2 } from "lucide-react"
 
@@ -88,95 +87,87 @@ export default function ClubAdminPage() {
 
     setCurrentUser(user)
 
-    const initialize = async () => {
-      try {
-        const allClubs = await getClubs()
-        const clubData = allClubs.find((c) => c.id === clubId)
-        if (!clubData) {
-          setError("Club not found")
-          return
-        }
-
-        setClub(clubData)
-        setFormData({
-          name: clubData.name,
-          shortDescription: clubData.shortDescription,
-          fullDescription: clubData.fullDescription,
-          email: clubData.email,
-          meetingTimes: clubData.meetingTimes,
-          membershipType: clubData.membershipType,
-        })
-
-        await loadData()
-      } catch (err) {
-        setError("Failed to load club information.")
-      } finally {
-        setLoading(false)
-      }
+    const clubData = clubs.find((c) => c.id === clubId)
+    if (!clubData) {
+      setError("Club not found")
+      setLoading(false)
+      return
     }
 
-    initialize()
-  }, [clubId, router, loadData])
+    setClub(clubData)
+    setFormData({
+      name: clubData.name,
+      shortDescription: clubData.shortDescription,
+      fullDescription: clubData.fullDescription,
+      email: clubData.email,
+      meetingTimes: clubData.meetingTimes,
+      membershipType: clubData.membershipType,
+    })
 
-  const loadData = useCallback(async () => {
-    try {
-      const [allMembers, clubEvents, clubAnnouncements] = await Promise.all([
-        getMembershipsByClub(clubId),
-        getEventsByClub(clubId),
-        getAnnouncementsByClub(clubId),
-      ])
-      setMembers(allMembers)
-      setEvents(clubEvents)
-      setAnnouncements(clubAnnouncements)
-    } catch (err) {
-      console.error(err)
-      setError("Failed to load club data.")
-    }
-  }, [clubId])
+    loadData()
+    setLoading(false)
+  }, [clubId, router])
+
+  const loadData = () => {
+    const allMembers = getMembershipsByClub(clubId)
+    setMembers(allMembers)
+
+    const clubEvents = getEventsByClub(clubId)
+    setEvents(clubEvents.length > 0 ? clubEvents : club?.events || [])
+
+    const clubAnnouncements = getAnnouncementsByClub(clubId)
+    setAnnouncements(clubAnnouncements)
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSave = async (e) => {
+  const handleSave = (e) => {
     e.preventDefault()
     setError("")
     setSuccess("")
 
     try {
-      const updated = await updateClub(clubId, formData)
-      setClub(updated)
+      const clubsData = JSON.parse(localStorage.getItem("clubsData") || "{}")
+      clubsData[clubId] = { ...formData, id: clubId }
+      localStorage.setItem("clubsData", JSON.stringify(clubsData))
+
       setSuccess("Club details updated successfully!")
       setEditMode(false)
       setTimeout(() => setSuccess(""), 3000)
     } catch (err) {
-      setError(err.message || "Failed to save club details")
+      setError("Failed to save club details")
     }
   }
 
-  const handleApproveMember = async (membershipId) => {
+  const handleApproveMember = (membershipId) => {
     const membership = members.find((m) => m.id === membershipId)
-    if (!membership) return
-    await updateMembership(membershipId, { status: "active" })
-    await loadData()
-    setSuccess("Member approved!")
-    setTimeout(() => setSuccess(""), 3000)
+    if (membership) {
+      membership.status = "active"
+      saveMembership(membership)
+      loadData()
+      setSuccess("Member approved!")
+      setTimeout(() => setSuccess(""), 3000)
+    }
   }
 
-  const handleRejectMember = async (membershipId) => {
+  const handleRejectMember = (membershipId) => {
     const membership = members.find((m) => m.id === membershipId)
-    if (!membership) return
-    await updateMembership(membershipId, { status: "rejected" })
-    await loadData()
-    setSuccess("Member request rejected")
-    setTimeout(() => setSuccess(""), 3000)
+    if (membership) {
+      membership.status = "rejected"
+      saveMembership(membership)
+      loadData()
+      setSuccess("Member request rejected")
+      setTimeout(() => setSuccess(""), 3000)
+    }
   }
 
-  const handleSaveEvent = async (e) => {
+  const handleSaveEvent = (e) => {
     e.preventDefault()
     const event = {
-      id: editingEvent?.id,
+      id: editingEvent?.id || Date.now().toString(),
       clubId: clubId,
       title: eventForm.title,
       date: eventForm.date,
@@ -184,10 +175,11 @@ export default function ClubAdminPage() {
       location: eventForm.location,
       description: eventForm.description,
       createdBy: currentUser.id,
+      createdAt: editingEvent?.createdAt || new Date().toISOString(),
     }
 
-    await saveEvent(event)
-    await loadData()
+    saveEvent(event)
+    loadData()
     setShowEventDialog(false)
     setEventForm({ title: "", date: "", time: "", location: "", description: "" })
     setEditingEvent(null)
@@ -195,10 +187,10 @@ export default function ClubAdminPage() {
     setTimeout(() => setSuccess(""), 3000)
   }
 
-  const handleDeleteEvent = async (eventId) => {
+  const handleDeleteEvent = (eventId) => {
     if (confirm("Are you sure you want to delete this event?")) {
-      await deleteEvent(eventId)
-      await loadData()
+      deleteEvent(eventId)
+      loadData()
       setSuccess("Event deleted successfully!")
       setTimeout(() => setSuccess(""), 3000)
     }
@@ -216,19 +208,20 @@ export default function ClubAdminPage() {
     setShowEventDialog(true)
   }
 
-  const handleSaveAnnouncement = async (e) => {
+  const handleSaveAnnouncement = (e) => {
     e.preventDefault()
     const announcement = {
-      id: editingAnnouncement?.id,
+      id: editingAnnouncement?.id || Date.now().toString(),
       clubId: clubId,
       title: announcementForm.title,
       content: announcementForm.content,
       priority: announcementForm.priority,
       createdBy: currentUser.id,
+      createdAt: editingAnnouncement?.createdAt || new Date().toISOString(),
     }
 
-    await saveAnnouncement(announcement)
-    await loadData()
+    saveAnnouncement(announcement)
+    loadData()
     setShowAnnouncementDialog(false)
     setAnnouncementForm({ title: "", content: "", priority: "medium" })
     setEditingAnnouncement(null)
@@ -236,10 +229,10 @@ export default function ClubAdminPage() {
     setTimeout(() => setSuccess(""), 3000)
   }
 
-  const handleDeleteAnnouncement = async (announcementId) => {
+  const handleDeleteAnnouncement = (announcementId) => {
     if (confirm("Are you sure you want to delete this announcement?")) {
-      await deleteAnnouncement(announcementId)
-      await loadData()
+      deleteAnnouncement(announcementId)
+      loadData()
       setSuccess("Announcement deleted successfully!")
       setTimeout(() => setSuccess(""), 3000)
     }
@@ -329,37 +322,41 @@ export default function ClubAdminPage() {
                   <div className="mb-6">
                     <h3 className="font-medium mb-3">Pending Requests ({pendingMembers.length})</h3>
                     <div className="space-y-2">
-                      {pendingMembers.map((member) => (
-                        <Card key={member.id} className="bg-secondary/10 border-secondary/20">
-                          <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium">{member.userName || "Unknown User"}</p>
-                                <p className="text-sm text-muted-foreground">{member.userEmail || "No email"}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Requested: {new Date(member.joinedAt).toLocaleDateString()}
-                                </p>
+                      {pendingMembers.map((member) => {
+                        const users = JSON.parse(localStorage.getItem("users") || "[]")
+                        const user = users.find((u) => u.id === member.userId)
+                        return (
+                          <Card key={member.id} className="bg-secondary/10 border-secondary/20">
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium">{user?.name || "Unknown User"}</p>
+                                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Requested: {new Date(member.joinedAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleApproveMember(member.id)}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRejectMember(member.id)}
+                                  >
+                                    Reject
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleApproveMember(member.id)}
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleRejectMember(member.id)}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
@@ -369,24 +366,28 @@ export default function ClubAdminPage() {
                   <p className="text-sm text-muted-foreground">No active members yet.</p>
                 ) : (
                   <div className="space-y-2">
-                    {activeMembers.map((member) => (
-                      <Card key={member.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{member.userName || "Unknown User"}</p>
-                              <p className="text-sm text-muted-foreground">{member.userEmail || "No email"}</p>
-                              <Badge variant="secondary" className="mt-1">
-                                {member.role}
-                              </Badge>
+                    {activeMembers.map((member) => {
+                      const users = JSON.parse(localStorage.getItem("users") || "[]")
+                      const user = users.find((u) => u.id === member.userId)
+                      return (
+                        <Card key={member.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">{user?.name || "Unknown User"}</p>
+                                <p className="text-sm text-muted-foreground">{user?.email}</p>
+                                <Badge variant="secondary" className="mt-1">
+                                  {member.role}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Joined: {new Date(member.joinedAt).toLocaleDateString()}
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              Joined: {new Date(member.joinedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>

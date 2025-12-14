@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Users, Star, MessageSquare } from "lucide-react"
+import { Calendar, Users, Star, MessageSquare, Settings } from "lucide-react"
 import {
   getMembershipsByUser,
-  getEventRSVPsByUser,
-  getReviewsByUser,
-  getConversations,
+  getEventRSVPs,
+  getReviews,
+  getReviewsByClub,
+  getMessages,
   getClubs,
 } from "@/lib/data-utils"
+import { clubs } from "@/lib/clubs"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -22,12 +24,11 @@ export default function ProfilePage() {
   const [memberships, setMemberships] = useState([])
   const [rsvps, setRsvps] = useState([])
   const [reviews, setReviews] = useState([])
-  const [conversationCount, setConversationCount] = useState(0)
-  const [clubDirectory, setClubDirectory] = useState([])
+  const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadProfile = async () => {
+    if (typeof window !== "undefined") {
       const user = JSON.parse(localStorage.getItem("currentUser") || "null")
       if (!user) {
         router.push("/sign-in")
@@ -36,28 +37,30 @@ export default function ProfilePage() {
 
       setCurrentUser(user)
 
-      try {
-        const [userMemberships, userRsvps, userReviews, userConversations, allClubs] = await Promise.all([
-          getMembershipsByUser(user.id),
-          getEventRSVPsByUser(user.id),
-          getReviewsByUser(user.id),
-          getConversations(user.id),
-          getClubs(),
-        ])
+      const userMemberships = getMembershipsByUser(user.id)
+      setMemberships(userMemberships)
 
-        setMemberships(userMemberships)
-        setRsvps(userRsvps)
-        setReviews(userReviews)
-        setConversationCount(userConversations.length)
-        setClubDirectory(allClubs)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
+      const userRsvps = getEventRSVPs().filter((r) => r.userId === user.id)
+      setRsvps(userRsvps)
+
+      const allReviews = getReviews()
+      const userReviews = allReviews.filter((r) => r.userId === user.id)
+      setReviews(userReviews)
+
+      const allMessages = getMessages()
+      const userMessages = allMessages.filter((m) => m.receiverId === user.id || m.senderId === user.id)
+      const uniqueUsers = new Set()
+      userMessages.forEach((m) => {
+        if (m.senderId === user.id) {
+          uniqueUsers.add(m.receiverId)
+        } else {
+          uniqueUsers.add(m.senderId)
+        }
+      })
+      setConversations(Array.from(uniqueUsers).length)
+
+      setLoading(false)
     }
-
-    loadProfile()
   }, [router])
 
   if (loading) {
@@ -68,26 +71,19 @@ export default function ProfilePage() {
     return null
   }
 
-  const allClubs = clubDirectory
+  const allClubs = [...clubs, ...getClubs()]
   const activeMemberships = memberships.filter((m) => m.status === "active")
   const joinedClubs = allClubs.filter((c) => activeMemberships.some((m) => m.clubId === c.id))
 
   const upcomingRSVPs = rsvps
     .filter((r) => r.status === "going")
     .map((r) => {
-      const club = allClubs.find((c) => c.id === r.clubId) || null
-      let event = null
-      if (r.eventTitle) {
-        event = {
-          title: r.eventTitle,
-          date: r.eventDate,
-          time: r.eventTime,
-          location: r.eventLocation,
-        }
-      } else if (club) {
-        event = (club.events || []).find((e) => (e.id || `${e.title}-${e.date}`) === r.eventId) || null
-      }
-      if (!event) return null
+      const club = allClubs.find((c) => {
+        const events = c.events || []
+        return events.some((e) => (e.id || `${e.title}-${e.date}`) === r.eventId)
+      })
+      if (!club) return null
+      const event = (club.events || []).find((e) => (e.id || `${e.title}-${e.date}`) === r.eventId)
       return { ...r, club, event }
     })
     .filter(Boolean)
@@ -146,7 +142,7 @@ export default function ProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{conversationCount}</div>
+              <div className="text-3xl font-bold">{conversations}</div>
             </CardContent>
           </Card>
         </div>

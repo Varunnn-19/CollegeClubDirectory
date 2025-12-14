@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { apiRequest } from "@/lib/api-client"
 import { Input } from "@/components/ui/input"
 
 export default function SignInPage() {
@@ -20,18 +19,15 @@ export default function SignInPage() {
     setError("")
     setLoading(true)
 
-    // Email domain validation
-    if (!email.endsWith("@bmsce.ac.in")) {
-      setError("Email must be from @bmsce.ac.in domain")
-      setLoading(false)
-      return
-    }
-
     try {
-      const { user } = await apiRequest("/users/login", {
-        method: "POST",
-        body: { email, password },
-      })
+      const users = JSON.parse(localStorage.getItem("users") || "[]")
+      const user = users.find((u) => u.email === email && u.password === password)
+
+      if (!user) {
+        setError("Invalid email or password")
+        setLoading(false)
+        return
+      }
 
       localStorage.setItem("currentUser", JSON.stringify(user))
       
@@ -47,7 +43,7 @@ export default function SignInPage() {
         router.push("/")
       }
     } catch (err) {
-      setError(err.message || "An error occurred. Please try again.")
+      setError("An error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -66,12 +62,11 @@ export default function SignInPage() {
               <label className="text-sm font-medium">Email Address</label>
               <Input
                 type="email"
-                placeholder="your@bmsce.ac.in"
+                placeholder="your@college.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <p className="text-xs text-muted-foreground">Only @bmsce.ac.in emails are allowed</p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Password</label>

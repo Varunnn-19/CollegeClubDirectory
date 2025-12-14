@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Star, Users, Calendar, MapPin } from "lucide-react"
-import { getClubDetail } from "@/lib/data-utils"
+import { getMembershipsByClub, getAverageRating, getReviewsByClub, getEventsByClub } from "@/lib/data-utils"
 
 /**
  * @param {Object} props
@@ -14,36 +14,25 @@ import { getClubDetail } from "@/lib/data-utils"
  * @param {Object} [props.club]
  */
 export function ClubModal({ open, onOpenChange, club }) {
-  const [detail, setDetail] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [memberCount, setMemberCount] = useState(0)
+  const [rating, setRating] = useState(0)
+  const [reviewCount, setReviewCount] = useState(0)
+  const [events, setEvents] = useState([])
 
   useEffect(() => {
-    if (!club?.slug) {
-      setDetail(null)
-      return
+    if (club && typeof window !== "undefined") {
+      const members = getMembershipsByClub(club.id).filter((m) => m.status === "active")
+      setMemberCount(members.length)
+      const avgRating = getAverageRating(club.id)
+      setRating(parseFloat(avgRating) || 0)
+      const reviews = getReviewsByClub(club.id)
+      setReviewCount(reviews.length)
+      
+      // Load events from localStorage (admin-created) or use default club events
+      const clubEvents = getEventsByClub(club.id)
+      setEvents(clubEvents.length > 0 ? clubEvents : club.events || [])
     }
-    let mounted = true
-    setLoading(true)
-    getClubDetail(club.slug)
-      .then((data) => {
-        if (mounted) setDetail(data)
-      })
-      .catch(() => {
-        if (mounted) setDetail(null)
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
-    return () => {
-      mounted = false
-    }
-  }, [club?.slug])
-
-  const stats = detail?.stats || club?.stats || {}
-  const memberCount = stats.memberCount || 0
-  const rating = stats.rating || 0
-  const reviewCount = stats.reviewCount || 0
-  const events = detail?.events?.length ? detail.events : club?.events || []
+  }, [club])
 
   if (!club) return null
 
@@ -55,7 +44,6 @@ export function ClubModal({ open, onOpenChange, club }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          {loading && <p className="text-sm text-muted-foreground">Loading club details...</p>}
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{club.category}</Badge>
             <Badge>{club.membershipType}</Badge>

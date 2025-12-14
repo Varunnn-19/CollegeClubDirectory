@@ -9,14 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Star, Users, Calendar, MapPin, Mail, ExternalLink } from "lucide-react"
 import { clubs } from "@/lib/clubs"
 import {
-  getClubDetail,
+  getClubs,
   getMembershipsByUser,
+  getMembershipsByClub,
   saveMembership,
   deleteMembership,
+  getEventsByClub,
+  getEventRSVPs,
   saveEventRSVP,
-  getEventRSVPsByUser,
+  getReviewsByClub,
   saveReview,
   getAverageRating,
+  getAnnouncementsByClub,
 } from "@/lib/data-utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -44,138 +48,107 @@ export default function ClubDetailPage() {
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState("")
   const [rsvps, setRsvps] = useState({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
 
   useEffect(() => {
-    let mounted = true
-    const loadData = async () => {
+    if (typeof window !== "undefined") {
+      // Get all clubs (default + custom)
       if (!params?.slug) {
         router.push("/clubs")
         return
       }
-      setLoading(true)
-      try {
-        const detail = await getClubDetail(params.slug)
-        if (!mounted) return
-        const user = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("currentUser") || "null") : null
-        setCurrentUser(user)
-        setClub({ ...detail.club, stats: detail.stats })
-        setMemberCount(detail.stats?.memberCount || 0)
-        setEvents(detail.events || [])
-        setReviews(detail.reviews || [])
-        setAnnouncements(detail.announcements || [])
-        setRating(detail.stats?.rating || 0)
-
-        if (user) {
-          const memberships = await getMembershipsByUser(user.id)
-          if (!mounted) return
-          setIsMember(memberships.some((m) => m.clubId === detail.club.id && m.status === "active"))
-
-          const userRsvps = await getEventRSVPsByUser(user.id)
-          if (!mounted) return
-          const rsvpMap = {}
-          userRsvps.forEach((r) => {
-            rsvpMap[r.eventId] = r.status
-          })
-          setRsvps(rsvpMap)
-        } else {
-          setIsMember(false)
-          setRsvps({})
-        }
-        setError("")
-      } catch (err) {
-        setError(err.message || "Unable to load club.")
+      const customClubs = getClubs()
+      const allClubs = [...clubs, ...customClubs]
+      const foundClub = allClubs.find((c) => c.slug === params.slug)
+      if (!foundClub) {
         router.push("/clubs")
-      } finally {
-        if (mounted) setLoading(false)
+        return
       }
-    }
-    loadData()
-    return () => {
-      mounted = false
+      setClub(foundClub)
+
+      const user = JSON.parse(localStorage.getItem("currentUser") || "null")
+      setCurrentUser(user)
+
+      if (user) {
+        const memberships = getMembershipsByUser(user.id)
+        setIsMember(memberships.some((m) => m.clubId === foundClub.id && m.status === "active"))
+      }
+
+      const members = getMembershipsByClub(foundClub.id).filter((m) => m.status === "active")
+      setMemberCount(members.length)
+
+      const clubEvents = getEventsByClub(foundClub.id)
+      setEvents(clubEvents.length > 0 ? clubEvents : foundClub.events || [])
+
+      const clubReviews = getReviewsByClub(foundClub.id)
+      setReviews(clubReviews)
+
+      const clubAnnouncements = getAnnouncementsByClub(foundClub.id)
+      setAnnouncements(clubAnnouncements)
+
+      const avgRating = getAverageRating(foundClub.id)
+      setRating(parseFloat(avgRating) || 0)
+
+      if (user) {
+        const userRsvps = getEventRSVPs().filter((r) => r.userId === user.id)
+        const rsvpMap = {}
+        userRsvps.forEach((r) => {
+          rsvpMap[r.eventId] = r.status
+        })
+        setRsvps(rsvpMap)
+      }
     }
   }, [params.slug, router])
 
-  const handleJoinClub = async () => {
+  const handleJoinClub = () => {
     if (!currentUser || !club) {
-      router.push("/sign-in")
+      if (!currentUser) router.push("/sign-in")
       return
     }
 
     const membership = {
+      id: Date.now().toString(),
       userId: currentUser.id,
       clubId: club.id,
-      userName: currentUser.name,
-      userEmail: currentUser.email,
       status: club.membershipType === "Open" ? "active" : "pending",
       role: "member",
       joinedAt: new Date().toISOString(),
     }
 
-    try {
-      const saved = await saveMembership(membership)
-      if (saved.status === "active") {
-        setIsMember(true)
-        setMemberCount((prev) => prev + 1)
-      } else {
-        setIsMember(false)
-      }
-    } catch (error) {
-      console.error(error)
-    }
+    saveMembership(membership)
+    setIsMember(true)
+    setMemberCount((prev) => prev + 1)
   }
 
-  const handleLeaveClub = async () => {
+  const handleLeaveClub = () => {
     if (!currentUser || !club) return
-    try {
-      await deleteMembership(currentUser.id, club.id)
-      setIsMember(false)
-      setMemberCount((prev) => Math.max(0, prev - 1))
-    } catch (error) {
-      console.error(error)
-    }
+    deleteMembership(currentUser.id, club.id)
+    setIsMember(false)
+    setMemberCount((prev) => Math.max(0, prev - 1))
   }
 
-  const handleRSVP = async (eventId, status) => {
+  const handleRSVP = (eventId, status) => {
     if (!currentUser) {
       router.push("/sign-in")
       return
     }
 
-    const previousStatus = rsvps[eventId]
-    try {
-      const event = events.find((evt) => (evt.id || `${evt.title}-${evt.date}`) === eventId)
-      await saveEventRSVP({
-        eventId,
-        userId: currentUser.id,
-        status,
-        clubId: club.id,
-        clubName: club.name,
-        eventTitle: event?.title,
-        eventDate: event?.date,
-        eventTime: event?.time,
-        eventLocation: event?.location,
-      })
-      setRsvps((prev) => ({ ...prev, [eventId]: status }))
-      setEvents((prev) =>
-        prev.map((event) => {
-          if ((event.id || `${event.title}-${event.date}`) !== eventId) return event
-          let delta = 0
-          if (status === "going" && previousStatus !== "going") delta = 1
-          if (status !== "going" && previousStatus === "going") delta = -1
-          return { ...event, rsvpCount: Math.max(0, (event.rsvpCount || 0) + delta) }
-        })
-      )
-    } catch (error) {
-      console.error(error)
+    const rsvp = {
+      id: Date.now().toString(),
+      eventId: eventId,
+      userId: currentUser.id,
+      status: status,
+      createdAt: new Date().toISOString(),
     }
+
+    saveEventRSVP(rsvp)
+    setRsvps((prev) => ({ ...prev, [eventId]: status }))
   }
 
-  const handleSubmitReview = async () => {
+  const handleSubmitReview = () => {
     if (!currentUser || !club || !reviewComment.trim()) return
 
     const review = {
+      id: Date.now().toString(),
       clubId: club.id,
       userId: currentUser.id,
       userName: currentUser.name,
@@ -184,103 +157,80 @@ export default function ClubDetailPage() {
       createdAt: new Date().toISOString(),
     }
 
-    try {
-      const saved = await saveReview(review)
-      setReviews((prev) => [saved, ...prev])
-      const newRating = await getAverageRating(club.id)
-      setRating(parseFloat(newRating) || 0)
-      setShowReviewDialog(false)
-      setReviewComment("")
-      setReviewRating(5)
-    } catch (error) {
-      console.error(error)
-    }
+    saveReview(review)
+    setReviews((prev) => [review, ...prev])
+    const newRating = getAverageRating(club.id)
+    setRating(parseFloat(newRating) || 0)
+    setShowReviewDialog(false)
+    setReviewComment("")
+    setReviewRating(5)
   }
 
-  if (loading || !club) {
+  if (!club) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
 
   const getEventRSVPCount = (eventId) => {
-    const event = events.find((evt) => (evt.id || `${evt.title}-${evt.date}`) === eventId)
-    return event?.rsvpCount || 0
+    return getEventRSVPs().filter((r) => r.eventId === eventId && r.status === "going").length
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section - Completely separate from header */}
-      <section className="pt-32 pb-12 border-b bg-gradient-to-b from-background to-muted/20">
-        <div className="mx-auto max-w-6xl px-4 md:px-6">
-          <nav aria-label="Breadcrumb" className="mb-6 text-sm">
-            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-              Home
-            </Link>
-            <span className="mx-2 text-muted-foreground">/</span>
-            <Link href="/clubs" className="text-muted-foreground hover:text-foreground transition-colors">
-              Clubs
-            </Link>
-            <span className="mx-2 text-muted-foreground">/</span>
-            <span className="text-foreground">{club.name}</span>
-          </nav>
+    <main className="mx-auto max-w-4xl px-4 py-8 md:px-6">
+      <nav aria-label="Breadcrumb" className="mb-4 text-sm">
+        <Link href="/" className="underline underline-offset-4 hover:text-primary">
+          Home
+        </Link>
+        <span className="mx-2 text-muted-foreground">/</span>
+        <Link href="/clubs" className="underline underline-offset-4 hover:text-primary">
+          Clubs
+        </Link>
+        <span className="mx-2 text-muted-foreground">/</span>
+        <span className="text-muted-foreground">{club.name}</span>
+      </nav>
 
-          <div className="flex flex-col gap-6 md:flex-row md:items-start">
-            <div className="flex-shrink-0">
-              <img
-                src={club.logoUrl || "/placeholder.svg"}
-                alt={`${club.name} logo`}
-                width={120}
-                height={120}
-                className="h-24 w-24 md:h-32 md:w-32 rounded-lg border-2 object-cover shadow-lg"
-              />
-            </div>
-            
-            <div className="flex-1 space-y-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">{club.name}</h1>
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Badge variant="secondary" className="text-xs">{club.category}</Badge>
-                  <Badge variant="outline" className="text-xs">{club.membershipType}</Badge>
-                  {rating > 0 && (
-                    <Badge variant="outline" className="gap-1 text-xs">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      {rating} ({reviews.length})
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-muted-foreground text-lg leading-relaxed">{club.shortDescription}</p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-6 pt-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <header className="mb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img
+              src={club.logoUrl || "/placeholder.svg"}
+              alt={`${club.name} logo`}
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-md border object-cover"
+            />
+            <div>
+              <h1 className="text-balance text-2xl font-semibold tracking-tight md:text-3xl">{club.name}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{club.category}</Badge>
+                <Badge>{club.membershipType}</Badge>
+                {rating > 0 && (
+                  <Badge variant="outline" className="gap-1">
+                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    {rating} ({reviews.length})
+                  </Badge>
+                )}
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
                   <Users className="h-4 w-4" />
-                  <span>{memberCount} members</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span>{rating > 0 ? `${rating} rating` : "No reviews yet"}</span>
-                </div>
+                  {memberCount} members
+                </span>
               </div>
-
-              {currentUser && (
-                <div className="pt-2">
-                  {!isMember ? (
-                    <Button onClick={handleJoinClub} size="lg" className="bg-primary hover:bg-primary/90">
-                      {club.membershipType === "Open" ? "Join Club" : "Request to Join"}
-                    </Button>
-                  ) : (
-                    <Button variant="outline" onClick={handleLeaveClub} size="lg">
-                      Leave Club
-                    </Button>
-                  )}
-                </div>
-              )}
             </div>
           </div>
+          {currentUser && (
+            <div className="flex gap-2">
+              {!isMember ? (
+                <Button onClick={handleJoinClub}>
+                  {club.membershipType === "Open" ? "Join Club" : "Request to Join"}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={handleLeaveClub}>
+                  Leave Club
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-      </section>
-
-      {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-4 py-12 md:px-6">
+      </header>
 
       {announcements.length > 0 && (
         <section className="mb-6">
@@ -531,7 +481,6 @@ export default function ClubDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
-      </main>
-    </div>
+    </main>
   )
 }

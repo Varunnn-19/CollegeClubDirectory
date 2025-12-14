@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,31 +22,9 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
-  const currentUserId = currentUser?.id
-
-  const loadConversations = useCallback(
-    async (userId) => {
-      const targetId = userId ?? currentUserId
-      if (!targetId) return
-      const convs = await getConversations(targetId)
-      setConversations(convs)
-    },
-    [currentUserId]
-  )
-
-  const loadMessages = useCallback(
-    async (otherUserId) => {
-      if (!currentUserId) return
-      const msgs = await getMessagesBetweenUsers(currentUserId, otherUserId)
-      setMessages(msgs)
-      await markMessagesAsRead(otherUserId, currentUserId)
-      await loadConversations()
-    },
-    [currentUserId, loadConversations]
-  )
 
   useEffect(() => {
-    const init = async () => {
+    if (typeof window !== "undefined") {
       const user = JSON.parse(localStorage.getItem("currentUser") || "null")
       if (!user) {
         router.push("/sign-in")
@@ -54,33 +32,52 @@ export default function MessagesPage() {
       }
 
       setCurrentUser(user)
-      await loadConversations(user.id)
+      loadConversations()
       setLoading(false)
     }
+  }, [router])
 
-    init()
-  }, [router, loadConversations])
-
-  const handleSelectUser = async (userId, userName) => {
-    setSelectedUser({ id: userId, name: userName })
-    await loadMessages(userId)
+  const loadConversations = () => {
+    if (!currentUser) return
+    const convs = getConversations(currentUser.id)
+    setConversations(convs)
   }
 
-  const handleSendMessage = async (e) => {
+  const loadMessages = (otherUserId) => {
+    if (!currentUser) return
+    const msgs = getMessagesBetweenUsers(currentUser.id, otherUserId)
+    setMessages(msgs)
+    markMessagesAsRead(otherUserId, currentUser.id)
+    loadConversations() // Refresh to update unread counts
+  }
+
+  const handleSelectUser = (userId, userName) => {
+    setSelectedUser({ id: userId, name: userName })
+    loadMessages(userId)
+  }
+
+  const handleSendMessage = (e) => {
     e.preventDefault()
     if (!newMessage.trim() || !currentUser || !selectedUser) return
 
+    const users = JSON.parse(localStorage.getItem("users") || "[]")
+    const receiver = users.find((u) => u.id === selectedUser.id)
+
     const message = {
+      id: Date.now().toString(),
       senderId: currentUser.id,
       receiverId: selectedUser.id,
       senderName: currentUser.name,
-      receiverName: selectedUser.name,
+      receiverName: receiver?.name || selectedUser.name,
       content: newMessage.trim(),
+      read: false,
+      createdAt: new Date().toISOString(),
     }
 
-    await saveMessage(message)
+    saveMessage(message)
     setNewMessage("")
-    await loadMessages(selectedUser.id)
+    loadMessages(selectedUser.id)
+    loadConversations()
   }
 
   if (loading) {

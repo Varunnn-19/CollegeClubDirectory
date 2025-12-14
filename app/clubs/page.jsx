@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ClubCard3D } from "@/components/club-card-3d"
 import { ClubModal } from "@/components/club-modal"
 import { SearchFilters } from "@/components/search-filters"
-import { categories, membershipTypes } from "@/lib/clubs"
-import { getClubs } from "@/lib/data-utils"
+import { clubs, categories, membershipTypes } from "@/lib/clubs"
+import { getClubs, getAverageRating, getMembershipsByClub } from "@/lib/data-utils"
 import {
   Pagination,
   PaginationContent,
@@ -30,28 +30,12 @@ export default function ClubsPage() {
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState(null)
   const [open, setOpen] = useState(false)
-  const [allClubs, setAllClubs] = useState([])
-  const [loadingClubs, setLoadingClubs] = useState(true)
-  const [error, setError] = useState("")
 
-  useEffect(() => {
-    let mounted = true
-    const load = async () => {
-      try {
-        const data = await getClubs()
-        if (mounted) {
-          setAllClubs(data)
-        }
-      } catch (err) {
-        if (mounted) setError(err.message || "Failed to load clubs.")
-      } finally {
-        if (mounted) setLoadingClubs(false)
-      }
-    }
-    load()
-    return () => {
-      mounted = false
-    }
+  // Get all clubs (default + custom)
+  const allClubs = useMemo(() => {
+    if (typeof window === "undefined") return clubs
+    const customClubs = getClubs()
+    return [...clubs, ...customClubs]
   }, [])
 
   // Filter and sort clubs
@@ -68,7 +52,7 @@ export default function ClubsPage() {
       
       // Rating filter
       if (minRating !== "0") {
-        const rating = parseFloat(c.stats?.rating || 0)
+        const rating = parseFloat(getAverageRating(c.id)) || 0
         if (rating < parseFloat(minRating)) return false
       }
       
@@ -83,9 +67,13 @@ export default function ClubsPage() {
         case "name-desc":
           return b.name.localeCompare(a.name)
         case "rating":
-          return (parseFloat(b.stats?.rating || 0) ?? 0) - (parseFloat(a.stats?.rating || 0) ?? 0)
+          const ratingA = parseFloat(getAverageRating(a.id)) || 0
+          const ratingB = parseFloat(getAverageRating(b.id)) || 0
+          return ratingB - ratingA
         case "members":
-          return (b.stats?.memberCount || 0) - (a.stats?.memberCount || 0)
+          const membersA = getMembershipsByClub(a.id).filter((m) => m.status === "active").length
+          const membersB = getMembershipsByClub(b.id).filter((m) => m.status === "active").length
+          return membersB - membersA
         case "recent":
           const dateA = new Date(a.createdAt || 0)
           const dateB = new Date(b.createdAt || 0)
@@ -109,10 +97,6 @@ export default function ClubsPage() {
   }, [])
 
   if (!isClient) return null
-
-  if (loadingClubs) {
-    return <div className="min-h-screen flex items-center justify-center">Loading clubs...</div>
-  }
 
   // Reset to page 1 when filters change
   function handleFilterChange(setter) {
@@ -157,8 +141,6 @@ export default function ClubsPage() {
         <p className="mb-3 text-sm font-medium text-foreground">
           Showing {filtered.length} result{filtered.length === 1 ? "" : "s"}
         </p>
-
-        {error && <p className="text-sm text-destructive mb-4">{error}</p>}
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {paginated.map((club, index) => (

@@ -1,8 +1,10 @@
 "use client"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Star } from "lucide-react"
+import { getMembershipsByClub, getAverageRating, getReviewsByClub } from "@/lib/data-utils"
 
 /**
  * @param {Object} props
@@ -10,8 +12,17 @@ import { Star } from "lucide-react"
  * @param {Function} [props.onOpen]
  */
 export function ClubCard({ club, onOpen }) {
-  const memberCount = club.stats?.memberCount || 0
-  const rating = club.stats?.rating || 0
+  const [memberCount, setMemberCount] = useState(0)
+  const [rating, setRating] = useState(0)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const members = getMembershipsByClub(club.id).filter((m) => m.status === "active")
+      setMemberCount(members.length)
+      const avgRating = getAverageRating(club.id)
+      setRating(parseFloat(avgRating) || 0)
+    }
+  }, [club.id])
 
   return (
     <Card 
