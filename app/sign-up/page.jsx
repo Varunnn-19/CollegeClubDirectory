@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { clubs } from "@/lib/clubs"
+import { getClubs } from "@/lib/data-utils"
+import { apiRequest } from "@/lib/api-client"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -23,6 +24,19 @@ export default function SignUpPage() {
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [clubOptions, setClubOptions] = useState([])
+
+  useEffect(() => {
+    const loadClubs = async () => {
+      try {
+        const list = await getClubs()
+        setClubOptions(list)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    loadClubs()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -59,6 +73,21 @@ export default function SignUpPage() {
       return
     }
 
+    // Email domain validation
+    if (!formData.email.endsWith("@bmsce.ac.in")) {
+      setError("Email must be from @bmsce.ac.in domain")
+      setLoading(false)
+      return
+    }
+
+    // Password requirements: at least one uppercase, one special character, and one number
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must contain at least one uppercase letter, one special character, and one number")
+      setLoading(false)
+      return
+    }
+
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters")
       setLoading(false)
@@ -72,30 +101,23 @@ export default function SignUpPage() {
     }
 
     try {
-      const users = JSON.parse(localStorage.getItem("users") || "[]")
-
-      if (users.find((u) => u.email === formData.email)) {
-        setError("Email already registered")
-        setLoading(false)
-        return
-      }
-
-      const newUser = {
-        id: Date.now(),
+      const payload = {
         name: formData.name,
         email: formData.email,
+        password: formData.password,
         usn: formData.usn,
         yearOfStudy: formData.yearOfStudy,
         phoneNumber: formData.phoneNumber,
-        password: formData.password,
         role: formData.role,
-        assignedClubId: formData.assignedClubId, // store assigned club
-        createdAt: new Date().toISOString(),
+        assignedClubId: formData.role === "admin" ? formData.assignedClubId : "",
       }
 
-      users.push(newUser)
-      localStorage.setItem("users", JSON.stringify(users))
-      localStorage.setItem("currentUser", JSON.stringify(newUser))
+      const { user } = await apiRequest("/users/register", {
+        method: "POST",
+        body: payload,
+      })
+
+      localStorage.setItem("currentUser", JSON.stringify(user))
       
       // Dispatch event and wait a bit to ensure state updates
       window.dispatchEvent(new Event("auth-change"))
@@ -103,13 +125,13 @@ export default function SignUpPage() {
       // Small delay to ensure header state updates before navigation
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      if (newUser.role === "admin") {
-        router.push(`/club-admin/${newUser.assignedClubId}`)
+      if (user.role === "admin" && user.assignedClubId) {
+        router.push(`/club-admin/${user.assignedClubId}`)
       } else {
         router.push("/")
       }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      setError(err.message || "An error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -140,11 +162,12 @@ export default function SignUpPage() {
               <Input
                 type="email"
                 name="email"
-                placeholder="john@college.edu"
+                placeholder="john@bmsce.ac.in"
                 value={formData.email}
                 onChange={handleChange}
                 required
               />
+              <p className="text-xs text-muted-foreground">Only @bmsce.ac.in emails are allowed</p>
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">USN (University Serial Number)</label>
@@ -208,7 +231,7 @@ export default function SignUpPage() {
                   required={formData.role === "admin"}
                 >
                   <option value="">Select a club</option>
-                  {clubs.map((club) => (
+                  {clubOptions.map((club) => (
                     <option key={club.id} value={club.id}>
                       {club.name}
                     </option>
@@ -227,6 +250,7 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 required
               />
+              <p className="text-xs text-muted-foreground">Must contain: uppercase letter, special character, and number</p>
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Confirm Password</label>

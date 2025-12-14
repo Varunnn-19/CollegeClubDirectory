@@ -193,12 +193,22 @@ export function SiteHeader() {
             </>
           )}
           {currentUser?.role === "admin" && (
-            <Link 
-              className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 active:scale-95"
-              href={`/club-admin/${currentUser.assignedClubId}`}
-            >
-              My Club
-            </Link>
+            <>
+              <Link 
+                className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 active:scale-95"
+                href="/admin/dashboard"
+              >
+                Approve Clubs
+              </Link>
+              {currentUser.assignedClubId && (
+                <Link 
+                  className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 active:scale-95"
+                  href={`/club-admin/${currentUser.assignedClubId}`}
+                >
+                  My Club
+                </Link>
+              )}
+            </>
           )}
         <div className="flex items-center gap-2">
           {mounted && currentUser ? (
@@ -277,9 +287,16 @@ export function SiteHeader() {
             </>
           )}
           {currentUser?.role === "admin" && (
-            <Link onClick={() => setOpen(false)} className="py-2" href={`/club-admin/${currentUser.assignedClubId}`}>
-              My Club
-            </Link>
+            <>
+              <Link onClick={() => setOpen(false)} className="py-2" href="/admin/dashboard">
+                Approve Clubs
+              </Link>
+              {currentUser.assignedClubId && (
+                <Link onClick={() => setOpen(false)} className="py-2" href={`/club-admin/${currentUser.assignedClubId}`}>
+                  My Club
+                </Link>
+              )}
+            </>
           )}
           {currentUser ? (
             <div className="flex flex-col gap-2 pt-2 border-t">

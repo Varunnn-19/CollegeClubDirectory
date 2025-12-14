@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select"
 import { ArrowLeft } from "lucide-react"
 import { saveClub } from "@/lib/data-utils"
+import { apiRequest } from "@/lib/api-client"
 
 export default function CreateClubPage() {
   const router = useRouter()
@@ -23,6 +24,7 @@ export default function CreateClubPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -61,12 +63,14 @@ export default function CreateClubPage() {
       .replace(/(^-|-$)/g, "")
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
+    setSubmitting(true)
 
     if (!formData.name || !formData.shortDescription || !formData.fullDescription || !formData.category) {
       setError("Please fill in all required fields")
+      setSubmitting(false)
       return
     }
 
@@ -94,24 +98,19 @@ export default function CreateClubPage() {
         createdAt: new Date().toISOString(),
       }
 
-      saveClub(club)
+      const createdClub = await saveClub(club)
 
-      // Auto-assign user as admin of the club they created
-      const users = JSON.parse(localStorage.getItem("users") || "[]")
-      const userIndex = users.findIndex((u) => u.id === currentUser.id)
-      if (userIndex !== -1) {
-        users[userIndex].role = "admin"
-        users[userIndex].assignedClubId = club.id
-        localStorage.setItem("users", JSON.stringify(users))
-        localStorage.setItem("currentUser", JSON.stringify(users[userIndex]))
-      }
+      // Note: User will be promoted to admin only after club is approved
+      // This will be handled in the admin approval process
 
       setSuccess(true)
       setTimeout(() => {
-        router.push(`/club-admin/${club.id}`)
-      }, 2000)
+        router.push("/")
+      }, 3000)
     } catch (err) {
-      setError("Failed to create club. Please try again.")
+      setError(err.message || "Failed to create club. Please try again.")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -125,11 +124,14 @@ export default function CreateClubPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background pt-20">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-primary">Club Created Successfully!</CardTitle>
-            <CardDescription>Redirecting to your club admin panel...</CardDescription>
+            <CardTitle className="text-primary">Club Request Submitted!</CardTitle>
+            <CardDescription>
+              Your club request has been submitted and is pending approval from the admin.
+              You will be notified once it's approved. Redirecting to home...
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -284,8 +286,8 @@ export default function CreateClubPage() {
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
-                  Create Club
+                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700" disabled={submitting}>
+                  {submitting ? "Creating..." : "Create Club"}
                 </Button>
                 <Link href="/clubs">
                   <Button type="button" variant="outline">
