@@ -35,14 +35,12 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://collegeclubdirectoryv1.vercel.app",
       "https://collegeclubdirectory.onrender.com",
+      "https://collegeclubdirectory-1-gs2yu5dx-varun-s-projects-56b448f5.vercel.app"
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
-);
+)
 
 app.use(express.json())
 
