@@ -30,13 +30,19 @@ const allowedOrigins =
   process.env.CLIENT_ORIGIN?.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean) || ["http://localhost:3000"]
-
+    
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: [
+      "http://localhost:3000",
+      "https://collegeclubdirectoryv1.vercel.app",
+      "https://collegeclubdirectory.onrender.com",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
-)
+);
 
 app.use(express.json())
 
