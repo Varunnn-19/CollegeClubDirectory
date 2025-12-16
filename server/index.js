@@ -62,7 +62,8 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ message: err.message || "Something went wrong." })
 })
 
-const PORT = process.env.SERVER_PORT || 4000
+const PORT = process.env.PORT || 4000
+
 
 connectDB()
   .then(() => {
