@@ -83,7 +83,7 @@ router.post(
 )
 
 router.get(
-  "/:id",
+  "/id/:id",
   asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id)
     if (!user) {
@@ -94,22 +94,26 @@ router.get(
 )
 
 router.patch(
-  "/:id",
+  "/id/:id",
   asyncHandler(async (req, res) => {
     const updates = { ...req.body }
     if (updates.password) {
       updates.passwordHash = await bcrypt.hash(updates.password, 10)
       delete updates.password
     }
+
     const user = await User.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
     })
+
     if (!user) {
       return res.status(404).json({ message: "User not found." })
     }
+
     res.json({ user: sanitizeUser(user) })
   })
 )
+
 
 export default router
