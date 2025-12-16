@@ -26,24 +26,31 @@ for (const file of ENV_FILES) {
 
 const app = express()
 
-const allowedOrigins =
-  process.env.CLIENT_ORIGIN?.split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean) || ["http://localhost:3000"]
-    
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://collegeclubdirectoryv1.vercel.app",
+  "https://collegeclubdirectoryv1-owsypnd7-varun-s-projects-56b448f5.vercel.app"
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://collegeclubdirectoryv1.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, curl)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    credentials: false, // IMPORTANT
   })
 );
 
-// IMPORTANT: handle preflight
+// VERY IMPORTANT
 app.options("*", cors());
 
 
