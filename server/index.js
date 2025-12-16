@@ -35,22 +35,23 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (Postman, curl)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      if (
+        origin.startsWith("http://localhost:3000") ||
+        origin.startsWith("https://collegeclubdirectoryv1.vercel.app") ||
+        origin.includes(".vercel.app")
+      ) {
         return callback(null, true);
-      } else {
-        return callback(new Error("Not allowed by CORS"));
       }
+
+      return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false, // IMPORTANT
   })
 );
 
-// VERY IMPORTANT
 app.options("*", cors());
 
 
