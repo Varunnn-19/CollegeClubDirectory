@@ -23,11 +23,14 @@ router.get(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const { userId, eventId, status = "going" } = req.body
+    const { userId, eventId } = req.body
     if (!userId || !eventId) {
       return res.status(400).json({ message: "Missing required RSVP fields." })
     }
-    const rsvp = await RSVP.create({ userId, eventId, status })
+    const rsvp = await RSVP.create({
+      ...req.body,
+      status: req.body.status || "going"
+    })
     res.status(201).json({ rsvp })
   })
 )
