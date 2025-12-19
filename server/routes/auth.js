@@ -6,10 +6,15 @@ import sanitizeUser from "../utils/sanitizeUser.js"
 import { sendOtpEmail } from "../utils/email.js"
 
 const router = express.Router()
-const APPROVED_DOMAIN = "@bmsce.ac.in"
 const OTP_EXPIRY_MINUTES = 10
 
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
+
+// Helper to check if email domain is allowed
+const isEmailAllowed = (email) => {
+  // Allow @bmsce.ac.in and @gmail.com for testing/deployment
+  return email.endsWith("@bmsce.ac.in") || email.endsWith("@gmail.com");
+}
 
 router.post(
   "/register",
@@ -20,8 +25,8 @@ router.post(
       return res.status(400).json({ message: "Missing required fields." })
     }
 
-    if (!email.endsWith(APPROVED_DOMAIN)) {
-      return res.status(400).json({ message: "Email must be from @bmsce.ac.in domain." })
+    if (!isEmailAllowed(email)) {
+      return res.status(400).json({ message: "Email must be from @bmsce.ac.in or @gmail.com domain." })
     }
 
     const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
@@ -82,16 +87,16 @@ router.post(
     if (otpResult.simulated) {
       return res.status(200).json({ 
         otpRequired: true, 
-        message: `OTP sent (Simulation Mode). Use code: ${otpCode} (or check server logs).`,
+        message: `OTP sent (Simulation Mode). Use code: ${otpCode}`,
         isSimulated: true 
       })
     }
     
     if (!otpResult.success) {
-      return res.status(500).json({ message: `Email error: ${otpResult.error}. Set EMAIL_* env vars for real emails.` })
+      return res.status(500).json({ message: `Email error: ${otpResult.error}` })
     }
 
-    res.status(200).json({ otpRequired: true, message: "OTP sent to your college email." })
+    res.status(200).json({ otpRequired: true, message: "OTP sent to your email." })
   })
 )
 
@@ -104,8 +109,8 @@ router.post(
       return res.status(400).json({ message: "Missing email or password." })
     }
 
-    if (!email.endsWith(APPROVED_DOMAIN)) {
-      return res.status(400).json({ message: "Email must be from @bmsce.ac.in domain." })
+    if (!isEmailAllowed(email)) {
+      return res.status(400).json({ message: "Email must be from @bmsce.ac.in or @gmail.com domain." })
     }
 
     const user = await User.findOne({ email }).select("+passwordHash +otpCode +otpExpiresAt")
@@ -137,16 +142,16 @@ router.post(
     if (otpResult.simulated) {
       return res.status(200).json({ 
         otpRequired: true, 
-        message: `OTP sent (Simulation Mode). Use code: ${otpCode} (or check server logs).`,
+        message: `OTP sent (Simulation Mode). Use code: ${otpCode}`,
         isSimulated: true 
       })
     }
 
     if (!otpResult.success) {
-      return res.status(500).json({ message: `Email error: ${otpResult.error}. Set EMAIL_* env vars for real emails.` })
+      return res.status(500).json({ message: `Email error: ${otpResult.error}` })
     }
 
-    res.json({ otpRequired: true, message: "OTP sent to your college email." })
+    res.json({ otpRequired: true, message: "OTP sent to your email." })
   })
 )
 
