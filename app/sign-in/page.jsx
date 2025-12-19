@@ -57,10 +57,12 @@ export default function SignInPage() {
           return
         }
       }
+
       if (!otp.trim()) {
         setError("Enter the OTP sent to your @bmsce.ac.in email.")
         return
       }
+
       const { user } = await apiRequest("/users/login", {
         method: "POST",
         body: { email, password, otp: otp.trim() },
@@ -68,8 +70,11 @@ export default function SignInPage() {
       await completeLogin(user)
     } catch (err) {
       setError(err.message || "An error occurred. Please try again.")
-      setOtpRequested(false)
-      setOtp("")
+      // Only reset otpRequested if it was a critical error, but for invalid OTP stay on current screen
+      if (err.message?.includes("Invalid credentials")) {
+         setOtpRequested(false)
+         setOtp("")
+      }
     } finally {
       setLoading(false)
     }
@@ -107,13 +112,13 @@ export default function SignInPage() {
                 required
               />
             </div>
+
             {otpRequested && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">One-Time Password</label>
                 <Input
                   type="text"
                   inputMode="numeric"
-                  pattern="\\d{6}"
                   placeholder="6-digit code"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
@@ -122,13 +127,16 @@ export default function SignInPage() {
                 <p className="text-xs text-muted-foreground">Check your @bmsce.ac.in inbox for the code.</p>
               </div>
             )}
+
             {error && <div className="text-destructive text-sm bg-destructive/10 border border-destructive/20 p-3 rounded">{error}</div>}
             {info && !error && (
               <div className="text-primary text-sm bg-primary/10 border border-primary/20 p-3 rounded">{info}</div>
             )}
+
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : otpRequested ? "Verify OTP" : "Send OTP"}
+              {loading ? "Processing..." : otpRequested ? "Verify OTP" : "Send OTP"}
             </Button>
+
             {otpRequested && (
               <Button
                 type="button"
