@@ -21,20 +21,36 @@ export default function AdminDashboard() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null")
-    if (!user || user.role !== "admin") {
+    const userString = localStorage.getItem("currentUser")
+    if (!userString) {
+      router.push("/sign-in")
+      return
+    }
+    
+    const user = JSON.parse(userString)
+    
+    // Authorization Check:
+    // 1. Must be an admin
+    // 2. Must NOT be a club admin (club admins have assignedClubId)
+    if (user.role !== "admin") {
       router.push("/")
       return
     }
-    setCurrentUser(user)
     
-    // If approver emails are configured, check if user is in the list
-    if (approverEmails.length > 0 && !approverEmails.includes(user.email.toLowerCase())) {
-      setError("You are not authorized as an approver. Please contact the site administrator.")
+    if (user.assignedClubId) {
+      setError("Club admins are not authorized to approve new clubs. Only page admins can perform this action.")
       setLoading(false)
       return
     }
-    
+
+    // 3. If approver emails list exists, must be in it
+    if (approverEmails.length > 0 && !approverEmails.includes(user.email.toLowerCase())) {
+      setError("You are not authorized as a page approver. Please contact the site administrator.")
+      setLoading(false)
+      return
+    }
+
+    setCurrentUser(user)
     loadPendingClubs()
   }, [router])
 
@@ -72,9 +88,9 @@ export default function AdminDashboard() {
       }
       
       await loadPendingClubs()
-    } catch (error) {
-      console.error("Failed to approve club:", error)
-      alert("Failed to approve club. Please try again.")
+    } catch (err) {
+      console.error("Failed to approve club:", err)
+      alert(err.message || "Failed to approve club.")
     } finally {
       setProcessing((prev) => ({ ...prev, [clubId]: null }))
     }
@@ -91,9 +107,9 @@ export default function AdminDashboard() {
         body: { status: "rejected" },
       })
       await loadPendingClubs()
-    } catch (error) {
-      console.error("Failed to reject club:", error)
-      alert("Failed to reject club. Please try again.")
+    } catch (err) {
+      console.error("Failed to reject club:", err)
+      alert(err.message || "Failed to reject club.")
     } finally {
       setProcessing((prev) => ({ ...prev, [clubId]: null }))
     }
@@ -109,8 +125,8 @@ export default function AdminDashboard() {
         <div className="mx-auto max-w-3xl px-4 py-8">
           <Card>
             <CardHeader>
-              <CardTitle>Admin Access</CardTitle>
-              <CardDescription>Club approval is restricted.</CardDescription>
+              <CardTitle>Admin Access Restricted</CardTitle>
+              <CardDescription>Club approval is restricted to page administrators.</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-destructive">{error}</p>
@@ -140,7 +156,7 @@ export default function AdminDashboard() {
 
         {approverEmails.length === 0 && (
           <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-600 text-sm">
-            Warning: No approver emails configured. Any admin can approve clubs.
+            Warning: No approver emails configured. Only page admins (admins with no assigned club) can approve.
           </div>
         )}
 
