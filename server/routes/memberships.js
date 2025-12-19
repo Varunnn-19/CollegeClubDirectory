@@ -23,11 +23,18 @@ router.get(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const { userId, clubId, role = "member" } = req.body
+    const { userId, clubId } = req.body
+    
     if (!userId || !clubId) {
-      return res.status(400).json({ message: "Missing required membership fields." })
+      return res.status(400).json({ message: "Missing required userId or clubId." })
     }
-    const membership = await Membership.create({ userId, clubId, role })
+
+    const membership = await Membership.create({
+      ...req.body,
+      role: req.body.role || "member",
+      status: req.body.status || "pending"
+    })
+    
     res.status(201).json({ membership })
   })
 )
