@@ -6,7 +6,6 @@ import sanitizeUser from "../utils/sanitizeUser.js"
 import { sendOtpEmail } from "../utils/email.js"
 
 const router = express.Router()
-
 const APPROVED_DOMAIN = "@bmsce.ac.in"
 const OTP_EXPIRY_MINUTES = 10
 
@@ -15,60 +14,89 @@ const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
 router.post(
   "/register",
   asyncHandler(async (req, res) => {
-    const { name, email, password, usn, yearOfStudy, phoneNumber, role = "user", assignedClubId = "" } = req.body
+    const { name, email, password, usn, yearOfStudy, phoneNumber, role = "user", assignedClubId = "", otp } = req.body
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing required fields." })
     }
 
-    // Email domain validation
     if (!email.endsWith(APPROVED_DOMAIN)) {
       return res.status(400).json({ message: "Email must be from @bmsce.ac.in domain." })
     }
 
-    // Password validation: at least one uppercase, one special character, and one number
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.\<>\/?])(?=.*[0-9]).{6,}$/
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
     if (!passwordRegex.test(password)) {
       return res.status(400).json({ message: "Password must contain at least one uppercase letter, one special character, and one number." })
     }
 
+    if (otp) {
+      const user = await User.findOne({ email }).select("+otpCode +otpExpiresAt")
+      if (!user) {
+        return res.status(404).json({ message: "Registration session not found." })
+      }
+      if (user.otpCode !== otp || user.otpExpiresAt < Date.now()) {
+        return res.status(400).json({ message: "Invalid or expired OTP." })
+      }
+
+      user.otpCode = undefined
+      user.otpExpiresAt = undefined
+      await user.save()
+      return res.status(201).json({ user: sanitizeUser(user) })
+    }
+
     const existing = await User.findOne({ email })
-    if (existing) {
+    if (existing && !existing.otpCode) {
       return res.status(400).json({ message: "Email already registered." })
     }
 
+    const otpCode = generateOtp()
     const passwordHash = await bcrypt.hash(password, 10)
-    const user = await User.create({
-      name,
-      email,
-      passwordHash,
-      usn,
-      yearOfStudy,
-      phoneNumber,
-      role,
-      assignedClubId,
-    })
+    
+    if (existing) {
+      existing.name = name;
+      existing.passwordHash = passwordHash;
+      existing.usn = usn;
+      existing.yearOfStudy = yearOfStudy;
+      existing.phoneNumber = phoneNumber;
+      existing.role = role;
+      existing.assignedClubId = assignedClubId;
+      existing.otpCode = otpCode;
+      existing.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60000);
+      await existing.save();
+    } else {
+      await User.create({
+        name,
+        email,
+        passwordHash,
+        usn,
+        yearOfStudy,
+        phoneNumber,
+        role,
+        assignedClubId,
+        otpCode,
+        otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60000),
+      })
+    }
 
-    res.status(201).json({ user: sanitizeUser(user) })
+    await sendOtpEmail(email, otpCode)
+    res.status(200).json({ otpRequired: true, message: "OTP sent to your college email." })
   })
 )
 
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
-    const { email, password } = req.body
+    const { email, password, otp } = req.body
 
     if (!email || !password) {
       return res.status(400).json({ message: "Missing email or password." })
     }
 
-    // Email domain validation
     if (!email.endsWith(APPROVED_DOMAIN)) {
       return res.status(400).json({ message: "Email must be from @bmsce.ac.in domain." })
     }
 
-    const user = await User.findOne({ email })
-
+    const user = await User.findOne({ email }).select("+passwordHash +otpCode +otpExpiresAt")
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials." })
     }
@@ -78,7 +106,23 @@ router.post(
       return res.status(401).json({ message: "Invalid credentials." })
     }
 
-    res.json({ user: sanitizeUser(user) })
+    if (otp) {
+      if (user.otpCode !== otp || user.otpExpiresAt < Date.now()) {
+        return res.status(400).json({ message: "Invalid or expired OTP." })
+      }
+      user.otpCode = undefined
+      user.otpExpiresAt = undefined
+      await user.save()
+      return res.json({ user: sanitizeUser(user) })
+    }
+
+    const otpCode = generateOtp()
+    user.otpCode = otpCode
+    user.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60000)
+    await user.save()
+
+    await sendOtpEmail(email, otpCode)
+    res.json({ otpRequired: true, message: "OTP sent to your college email." })
   })
 )
 
@@ -101,19 +145,15 @@ router.patch(
       updates.passwordHash = await bcrypt.hash(updates.password, 10)
       delete updates.password
     }
-
     const user = await User.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
     })
-
     if (!user) {
       return res.status(404).json({ message: "User not found." })
     }
-
     res.json({ user: sanitizeUser(user) })
   })
 )
-
 
 export default router
