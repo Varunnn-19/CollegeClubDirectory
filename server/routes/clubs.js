@@ -11,8 +11,9 @@ const router = express.Router()
 
 const APPROVER_EMAILS = (process.env.APPROVER_EMAILS || "")
   .split(",")
-  .map((email) => email.trim())
+  .map((email) => email.trim().toLowerCase())
   .filter(Boolean)
+
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -23,9 +24,9 @@ router.get(
     )
       .sort({ name: 1 })
       .lean()
-
+    
     const stats = await buildClubStats(clubs.map((club) => club._id))
-
+    
     const payload = clubs.map((club) => ({
       ...club,
       id: club._id,
@@ -35,7 +36,6 @@ router.get(
         reviewCount: stats[club._id]?.reviewCount || 0,
       },
     }))
-
     res.json({ clubs: payload })
   })
 )
@@ -51,7 +51,6 @@ router.get(
     const announcements = await Announcement.find({ clubId: req.params.id }).lean()
     const reviews = await Review.find({ clubId: req.params.id }).lean()
     const stats = await buildClubStats([req.params.id])
-
     res.json({
       club: {
         ...club.toObject(),
@@ -86,6 +85,20 @@ router.post(
 router.patch(
   "/:id",
   asyncHandler(async (req, res) => {
+    const approverEmail = req.headers["x-approver-email"]
+    
+    // Authorization check for club approval/rejection
+    if (req.body.status === "approved" || req.body.status === "rejected") {
+      if (!approverEmail) {
+        return res.status(401).json({ message: "Approver email required." })
+      }
+      
+      const email = approverEmail.toLowerCase()
+      if (APPROVER_EMAILS.length > 0 && !APPROVER_EMAILS.includes(email)) {
+        return res.status(403).json({ message: "You are not authorized to approve clubs." })
+      }
+    }
+
     const updates = { ...req.body }
     const club = await Club.findByIdAndUpdate(req.params.id, updates, {
       new: true,
