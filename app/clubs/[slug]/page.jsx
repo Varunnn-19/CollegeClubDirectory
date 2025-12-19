@@ -105,8 +105,8 @@ setLoading(false)      } finally {
     }
 
     const membership = {
-      userId: currentUser.id,
-      clubId: club.id,
+      userId: currentUser.id || currentUser._id,
+      clubId: club..id || club._id,
       userName: currentUser.name,
       userEmail: currentUser.email,
       status: club.membershipType === "Open" ? "active" : "pending",
