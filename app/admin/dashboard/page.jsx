@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -23,19 +22,19 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null")
-
     if (!user || user.role !== "admin") {
       router.push("/")
       return
     }
-
     setCurrentUser(user)
-    if (approverEmails.length === 0) {
-      setError("Approver email is not configured. Please contact the site administrator.")
+    
+    // If approver emails are configured, check if user is in the list
+    if (approverEmails.length > 0 && !approverEmails.includes(user.email.toLowerCase())) {
+      setError("You are not authorized as an approver. Please contact the site administrator.")
       setLoading(false)
       return
     }
-
+    
     loadPendingClubs()
   }, [router])
 
@@ -53,20 +52,14 @@ export default function AdminDashboard() {
   const handleApprove = async (clubId) => {
     setProcessing((prev) => ({ ...prev, [clubId]: "approving" }))
     try {
-      // Find the club in the pending list to get createdBy
       const club = pendingClubs.find(c => c.id === clubId)
       
-      // Approve the club
       await apiRequest(`/clubs/${clubId}`, {
         method: "PATCH",
-
         headers: { "x-approver-email": currentUser.email },
-
-
         body: { status: "approved" },
       })
       
-      // Promote the creator to admin for this club
       if (club?.createdBy) {
         try {
           await apiRequest(`/users/${club.createdBy}`, {
@@ -75,7 +68,6 @@ export default function AdminDashboard() {
           })
         } catch (userError) {
           console.error("Failed to promote user to admin:", userError)
-          // Continue even if user promotion fails
         }
       }
       
@@ -95,9 +87,7 @@ export default function AdminDashboard() {
     try {
       await apiRequest(`/clubs/${clubId}`, {
         method: "PATCH",
-
         headers: { "x-approver-email": currentUser.email },
-
         body: { status: "rejected" },
       })
       await loadPendingClubs()
@@ -112,7 +102,6 @@ export default function AdminDashboard() {
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
-
 
   if (error) {
     return (
@@ -137,8 +126,6 @@ export default function AdminDashboard() {
     )
   }
 
-
-
   return (
     <div className="min-h-screen bg-background pt-24">
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -150,6 +137,12 @@ export default function AdminDashboard() {
             </Link>
           </div>
         </div>
+
+        {approverEmails.length === 0 && (
+          <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-600 text-sm">
+            Warning: No approver emails configured. Any admin can approve clubs.
+          </div>
+        )}
 
         {pendingClubs.length === 0 ? (
           <Card>
