@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer"
 
-// Create a transporter lazily so builds don't fail when env is missing
 let cachedTransporter = null
 
 function getTransporter() {
@@ -18,15 +17,30 @@ function getTransporter() {
     return null
   }
 
+  const port = Number(EMAIL_PORT)
+  
+  // Use specialized Gmail settings if host is smtp.gmail.com
+  const isGmail = EMAIL_HOST.includes("gmail.com")
+
   cachedTransporter = nodemailer.createTransport({
     host: EMAIL_HOST,
-    port: Number(EMAIL_PORT),
-    secure: Number(EMAIL_PORT) === 465,
+    port: port,
+    // Port 465 uses secure: true, Port 587 uses secure: false (TLS)
+    secure: port === 465,
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
     },
+    // Increase timeouts for cloud environments like Render
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    // Add pool configuration for better reliability
+    pool: isGmail,
+    maxConnections: 5,
+    maxMessages: 100,
   })
+  
   return cachedTransporter
 }
 
@@ -45,17 +59,28 @@ export async function sendEmail({ to, subject, text, html }) {
   }
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to,
       subject,
       text,
       html,
     })
+    console.log(`[Email] Sent to ${to}: ${info.messageId}`)
     return { success: true, simulated: false }
   } catch (error) {
-    console.error("[Email Error]", error)
-    return { success: false, error: error.message }
+    console.error("[Email Error Detail]", {
+      message: error.message,
+      code: error.code,
+      command: error.command
+    })
+    
+    // If it's a timeout, provide a more helpful message
+    const errorMsg = error.code === 'ETIMEDOUT' 
+      ? "Connection timeout. Please try switching EMAIL_PORT to 587 in Render."
+      : error.message
+
+    return { success: false, error: errorMsg }
   }
 }
 
