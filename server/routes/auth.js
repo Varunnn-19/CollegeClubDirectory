@@ -78,7 +78,19 @@ router.post(
       })
     }
 
-    await sendOtpEmail(email, otpCode)
+    const otpResult = await sendOtpEmail(email, otpCode)
+    if (otpResult.simulated) {
+      return res.status(200).json({ 
+        otpRequired: true, 
+        message: `OTP sent (Simulation Mode). Use code: ${otpCode} (or check server logs).`,
+        isSimulated: true 
+      })
+    }
+    
+    if (!otpResult.success) {
+      return res.status(500).json({ message: `Email error: ${otpResult.error}. Set EMAIL_* env vars for real emails.` })
+    }
+
     res.status(200).json({ otpRequired: true, message: "OTP sent to your college email." })
   })
 )
@@ -121,7 +133,19 @@ router.post(
     user.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60000)
     await user.save()
 
-    await sendOtpEmail(email, otpCode)
+    const otpResult = await sendOtpEmail(email, otpCode)
+    if (otpResult.simulated) {
+      return res.status(200).json({ 
+        otpRequired: true, 
+        message: `OTP sent (Simulation Mode). Use code: ${otpCode} (or check server logs).`,
+        isSimulated: true 
+      })
+    }
+
+    if (!otpResult.success) {
+      return res.status(500).json({ message: `Email error: ${otpResult.error}. Set EMAIL_* env vars for real emails.` })
+    }
+
     res.json({ otpRequired: true, message: "OTP sent to your college email." })
   })
 )
