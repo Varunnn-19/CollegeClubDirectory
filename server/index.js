@@ -1,18 +1,6 @@
+import "./env.js"
 import express from "express"
 import cors from "cors"
-import dotenv from "dotenv"
-import fs from "fs"
-import path from "path"
-
-// Load environment variables immediately before other imports
-const ENV_FILES = [".env", ".env.local", "database.env"]
-for (const file of ENV_FILES) {
-  const fullPath = path.resolve(process.cwd(), file)
-  if (fs.existsSync(fullPath)) {
-    dotenv.config({ path: fullPath, override: true })
-  }
-}
-
 import connectDB from "./config/db.js"
 import seedClubs from "./seed/seedClubs.js"
 import authRoutes from "./routes/auth.js"
