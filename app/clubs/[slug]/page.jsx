@@ -71,7 +71,7 @@ export default function ClubDetailPage() {
         if (user) {
           const memberships = await getMembershipsByUser(user.id)
           if (!mounted) return
-          setIsMemberconst activeMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "active")
+          const activeMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "active")
      const pendingMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "pending")
      setIsMember(!!activeMembership)
      setPendingMembership(!!pendingMembership)
