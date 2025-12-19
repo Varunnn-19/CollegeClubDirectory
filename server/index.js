@@ -1,9 +1,18 @@
-// Backend fixed and ready - Dec 15, 2025 11:00 PM
 import express from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 import fs from "fs"
 import path from "path"
+
+// Load environment variables immediately before other imports
+const ENV_FILES = [".env", ".env.local", "database.env"]
+for (const file of ENV_FILES) {
+  const fullPath = path.resolve(process.cwd(), file)
+  if (fs.existsSync(fullPath)) {
+    dotenv.config({ path: fullPath, override: true })
+  }
+}
+
 import connectDB from "./config/db.js"
 import seedClubs from "./seed/seedClubs.js"
 import authRoutes from "./routes/auth.js"
@@ -15,17 +24,7 @@ import announcementsRoutes from "./routes/announcements.js"
 import reviewsRoutes from "./routes/reviews.js"
 import messagesRoutes from "./routes/messages.js"
 
-const ENV_FILES = [".env", ".env.local", "database.env"]
-
-for (const file of ENV_FILES) {
-  const fullPath = path.resolve(process.cwd(), file)
-  if (fs.existsSync(fullPath)) {
-    dotenv.config({ path: fullPath, override: true })
-  }
-}
-
 const app = express()
-
 const allowedOrigins = [
   "http://localhost:3000",
   "https://collegeclubdirectoryv1.vercel.app",
@@ -36,7 +35,6 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
-
       if (
         origin.startsWith("http://localhost:3000") ||
         origin.startsWith("https://collegeclubdirectoryv1.vercel.app") ||
@@ -44,7 +42,6 @@ app.use(
       ) {
         return callback(null, true);
       }
-
       return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -53,8 +50,6 @@ app.use(
 );
 
 app.options("*", cors());
-
-
 app.use(express.json())
 
 app.get("/health", (_req, res) => {
@@ -76,8 +71,6 @@ app.use((err, _req, res, _next) => {
 })
 
 const PORT = process.env.PORT || 4000
-
-
 connectDB()
   .then(() => {
     app.listen(PORT, () => {
