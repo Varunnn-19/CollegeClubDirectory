@@ -35,6 +35,7 @@ export default function ClubDetailPage() {
   const [club, setClub] = useState(null)
   const [currentUser, setCurrentUser] = useState(null)
   const [isMember, setIsMember] = useState(false)
+   const [pendingMembership, setPendingMembership] = useState(false)
   const [memberCount, setMemberCount] = useState(0)
   const [events, setEvents] = useState([])
   const [reviews, setReviews] = useState([])
@@ -70,7 +71,10 @@ export default function ClubDetailPage() {
         if (user) {
           const memberships = await getMembershipsByUser(user.id)
           if (!mounted) return
-          setIsMember(memberships.some((m) => m.clubId === detail.club.id && m.status === "active"))
+          setIsMemberconst activeMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "active")
+     const pendingMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "pending")
+     setIsMember(!!activeMembership)
+     setPendingMembership(!!pendingMembership)
 
           const userRsvps = await getEventRSVPsByUser(user.id)
           if (!mounted) return
@@ -264,15 +268,21 @@ clubId: club.id || club._id,
 
               {currentUser && (
                 <div className="pt-2">
-                  {!isMember ? (
-                    <Button onClick={handleJoinClub} size="lg" className="bg-primary hover:bg-primary/90">
-                      {club.membershipType === "Open" ? "Join Club" : "Request to Join"}
-                    </Button>
-                  ) : (
-                    <Button variant="outline" onClick={handleLeaveClub} size="lg">
-                      Leave Club
-                    </Button>
-                  )}
+{!isMember && !pendingMembership && (
+      <Button onClick={handleJoinClub} size="lg" className="bg-primary hover:bg-primary/90">
+        {club.membershipType === "Open" ? "Join Club" : "Request to Join"}
+      </Button>
+    )}
+    {pendingMembership && (
+      <Button disabled variant="outline" size="lg">
+        Request Pending...
+      </Button>
+    )}
+    {isMember && (
+      <Button variant="outline" onClick={handleLeaveClub} size="lg">
+        Leave Club
+      </Button>
+    )}
                 </div>
               )}
             </div>
