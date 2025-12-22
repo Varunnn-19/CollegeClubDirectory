@@ -71,10 +71,10 @@ export default function ClubDetailPage() {
         if (user) {
           const memberships = await getMembershipsByUser(user.id)
           if (!mounted) return
+          const anyMembership = memberships.find((m) => m.clubId === detail.club._id)
           const activeMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "active")
      const pendingMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "pending")
-     setIsMember(!!activeMembership)
-     setPendingMembership(!!pendingMembership)
+setIsMember(!!activeMembership || !!anyMembership)     setPendingMembership(!!pendingMembership)
 
           const userRsvps = await getEventRSVPsByUser(user.id)
           if (!mounted) return
@@ -125,8 +125,12 @@ clubId: club.id || club._id,
           setPendingMembership(true); setIsMember(false);
           }
     catch (error) {
+if (error.status === 409 || error.message?.includes("already")) {
+      alert("You are already a member of this club!")
+    } else {
       console.error(error)
-    }
+      alert("Failed to join club. Please try again.")
+    }    }
   }
 
   const handleLeaveClub = async () => {
