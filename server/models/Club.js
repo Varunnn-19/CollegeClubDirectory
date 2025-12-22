@@ -1,7 +1,9 @@
 import mongoose from "mongoose"
 
-const clubSchema = new mongoose.Schema(  {
+const clubSchema = new mongoose.Schema(
+  {
     name: { type: String, required: true, unique: true },
+    slug: { type: String, unique: true, sparse: true },
     description: { type: String, required: true },
     category: { type: String, required: true },
     image: String,
@@ -11,7 +13,18 @@ const clubSchema = new mongoose.Schema(  {
   { versionKey: false }
 )
 
-const Club = mongoose.models.Club || mongoose.model("Club", clubSchema)
-                                                   
+// Auto-generate slug from name before saving
+clubSchema.pre("save", function (next) {
+  if (!this.slug && this.name) {
+    this.slug = this.name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w-]/g, "")
+  }
+  next()
+})
 
-export default Club;
+const Club = mongoose.models.Club || mongoose.model("Club", clubSchema)
+
+export default Club
