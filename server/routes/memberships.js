@@ -66,4 +66,29 @@ router.delete(
   })
 )
 
+// Approve or reject membership request
+router.patch(
+  "/:id/approve",
+  asyncHandler(async (req, res) => {
+    const { status } = req.body // 'active' to approve, 'rejected' to reject
+    
+    if (!status || !['active', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status. Use 'active' or 'rejected'." })
+    }
+    
+    const membership = await Membership.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    )
+    
+    if (!membership) {
+      return res.status(404).json({ message: "Membership not found." })
+    }
+    
+    res.json({ membership, message: `Membership ${status === 'active' ? 'approved' : 'rejected'}.` })
+  })
+)
+
+
 export default router
