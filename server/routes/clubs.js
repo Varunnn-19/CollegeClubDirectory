@@ -18,6 +18,22 @@ const APPROVER_EMAILS = (process.env.APPROVER_EMAILS || "")
 router.get(
   "/",
   asyncHandler(async (req, res) => {
+    // Handle slug query parameter
+    if (req.query.slug) {
+      const club = await Club.findOne({ slug: req.query.slug })
+      if (!club) {
+        return res.status(404).json({ clubs: [] })
+      }
+      const stats = await buildClubStats([club._id])
+      return res.json({
+        clubs: [{
+          ...club.toObject(),
+          id: club._id,
+          stats: stats[club._id] || { memberCount: 0, rating: 0, reviewCount: 0 },
+        }],
+      })
+    }
+
     // Only show approved clubs to regular users, admins can see all
     const statusFilter = req.query.status || "approved"
     const clubs = await Club.find(
@@ -25,9 +41,9 @@ router.get(
     )
       .sort({ name: 1 })
       .lean()
-    
+
     const stats = await buildClubStats(clubs.map((club) => club._id))
-    
+
     const payload = clubs.map((club) => ({
       ...club,
       id: club._id,
@@ -44,23 +60,38 @@ router.get(
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
-        // Validate MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: "Invalid club ID format." })
+    const { id } = req.params
+
+    // Try to find by ObjectId first (if valid)
+    let club = null
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      club = await Club.findById(id)
     }
-    const club = await Club.findById(req.params.id)
+
+    // If not found by ObjectId, try to find by slug
+    if (!club) {
+      club = await Club.findOne({ slug: id })
+    }
+
+    // If still not found, try to find by numeric ID or name
+    if (!club) {
+      club = await Club.findOne({ $or: [{ name: id }] })
+    }
+
     if (!club) {
       return res.status(404).json({ message: "Club not found." })
     }
-    const events = await Event.find({ clubId: req.params.id }).lean()
-    const announcements = await Announcement.find({ clubId: req.params.id }).lean()
-    const reviews = await Review.find({ clubId: req.params.id }).lean()
-    const stats = await buildClubStats([req.params.id])
+
+    const events = await Event.find({ clubId: club._id }).lean()
+    const announcements = await Announcement.find({ clubId: club._id }).lean()
+    const reviews = await Review.find({ clubId: club._id }).lean()
+    const stats = await buildClubStats([club._id])
+
     res.json({
       club: {
         ...club.toObject(),
         id: club._id,
-        stats: stats[req.params.id] || { memberCount: 0, rating: 0, reviewCount: 0 },
+        stats: stats[club._id] || { memberCount: 0, rating: 0, reviewCount: 0 },
       },
       events,
       announcements,
@@ -91,19 +122,18 @@ router.patch(
   "/:id",
   asyncHandler(async (req, res) => {
     const approverEmail = req.headers["x-approver-email"]
-    
+
     // Authorization check for club approval/rejection
     if (req.body.status === "approved" || req.body.status === "rejected") {
       if (!approverEmail) {
         return res.status(401).json({ message: "Approver email required." })
       }
-      
+
       const email = approverEmail.toLowerCase()
       if (APPROVER_EMAILS.length > 0 && !APPROVER_EMAILS.includes(email)) {
         return res.status(403).json({ message: "You are not authorized to approve clubs." })
       }
     }
-
     const updates = { ...req.body }
     const club = await Club.findByIdAndUpdate(req.params.id, updates, {
       new: true,
