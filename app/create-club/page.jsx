@@ -47,6 +47,7 @@ export default function CreateClubPage() {
         return
       }
       setCurrentUser(user)
+           // Note: Club admins can create clubs but will need page admin approval
       setLoading(false)
     }
   }, [router])
@@ -157,6 +158,12 @@ export default function CreateClubPage() {
             <CardDescription>Fill in the details to create your new club</CardDescription>
           </CardHeader>
           <CardContent>
+                         {currentUser?.assignedClubId && (
+              <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded text-blue-600 text-sm">
+                <p className="font-semibold mb-2">📋 Club Admin Notice</p>
+                <p>As a club admin, new clubs you create will require approval from the page administrator before they become active. You will be notified once the approval decision is made.</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="p-4 bg-destructive/10 border border-destructive/20 rounded text-destructive">{error}</div>
