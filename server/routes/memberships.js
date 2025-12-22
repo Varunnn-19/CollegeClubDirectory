@@ -29,6 +29,15 @@ router.post(
       return res.status(400).json({ message: "Missing required userId or clubId." })
     }
 
+    
+    // Check if user is already a member
+    const existingMembership = await Membership.findOne({
+      userId: req.body.userId,
+      clubId: req.body.clubId
+    })
+    if (existingMembership) {
+      return res.status(409).json({ message: "User is already a member of this club." })
+    }
     const membership = await Membership.create({
       ...req.body,
       role: req.body.role || "member",
