@@ -160,7 +160,7 @@ export default function ClubAdminPage() {
     try {
     const membership = members.find((m) => m.id === membershipId)
     if (!membership) return
-    await updateMembership(membershipId, { status: "active" })
+    await updateMembership(membershipId, { status: "joined" })
     await loadData()
     setSuccess("Member approved!")
     setTimeout(() => setSuccess(""), 3000)
