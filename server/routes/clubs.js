@@ -1,4 +1,5 @@
 import express from "express"
+import mongoose from "mongoose"
 import Club from "../models/Club.js"
 import Event from "../models/Event.js"
 import Announcement from "../models/Announcement.js"
@@ -43,6 +44,10 @@ router.get(
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
+        // Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid club ID format." })
+    }
     const club = await Club.findById(req.params.id)
     if (!club) {
       return res.status(404).json({ message: "Club not found." })
