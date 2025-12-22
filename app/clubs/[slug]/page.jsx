@@ -268,7 +268,8 @@ clubId: club.id || club._id,
                 <div className="pt-2">
 {!isMember && !pendingMembership && (
       <Button onClick={handleJoinClub} size="lg" className="bg-primary hover:bg-primary/90">
-        {club.membershipType === "Open" ? "Join Club" : "Request to Join"}
+        {club.membershipType === "Open" ? "240
+        " : "Request to Join"}
       </Button>
     )}
     {pendingMembership && (
