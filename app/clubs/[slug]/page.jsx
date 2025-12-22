@@ -102,7 +102,7 @@ setLoading(false)      } finally {
     }
   }, [params.slug, router])
 
-  const 105
+  const handleJoinClub
     = async () => {
     if (!currentUser || !club) {
       router.push("/sign-in")
