@@ -324,4 +324,13 @@ export default function ProfilePage() {
                     <p className="text-lg text-slate-900">{currentUser.name}</p>
                   </div>
                   <div>
-                    <p className="
+                    <p className="text-sm text-slate-600 font-medium mb-1">Email</p>
+                     <p className="text-lg text-slate-900">{currentUser.email}</p>
+                     </div>
+                   </CardContent>
+                 </Card>
+               </TabsContent>
+             </Tabs>
+           </div>
+         </div>
+      )}
