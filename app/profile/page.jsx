@@ -69,7 +69,7 @@ export default function ProfilePage() {
   }
 
   const allClubs = clubDirectory
-  const activeMemberships = memberships.filter((m) => m.status === "active")
+  const activeMemberships = memberships.filter((m) => m.status === "joined")
  const joinedClubs = allClubs.filter((c) => activeMemberships.some((m) => String(m.clubId) === String(c.id || c._id)))
   const upcomingRSVPs = rsvps
     .filter((r) => r.status === "going")
