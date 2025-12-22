@@ -76,28 +76,13 @@ export default function CreateClubPage() {
     }
 
     try {
-      const club = {
-        id: Date.now().toString(),
-        slug: generateSlug(formData.name),
-        name: formData.name,
-        logoUrl: "/placeholder-logo.png",
-        shortDescription: formData.shortDescription,
-        fullDescription: formData.fullDescription,
-        category: formData.category,
-        membershipType: formData.membershipType,
-        email: formData.email || currentUser.email,
-        social: {
-          website: formData.website || undefined,
-          twitter: formData.twitter || undefined,
-          instagram: formData.instagram || undefined,
-        },
-        meetingTimes: formData.meetingTimes || "TBD",
-        events: [],
-        images: [],
-        status: "pending",
-        createdBy: currentUser.id,
-        createdAt: new Date().toISOString(),
-      }
+     const clubPayload = {
+  name: formData.name,
+  description: formData.fullDescription,
+  category: formData.category,
+  membershipType: formData.membershipType.toLowerCase(), // backend usually expects lowercase
+}
+    }
 
       const createdClub = await saveClub(club)
 
