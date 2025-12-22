@@ -180,12 +180,6 @@ export function SiteHeader() {
               </Link>
               <Link 
                 className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
-                href="/messages"
-              >
-                Messages
-              </Link>
-              <Link 
-                className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95"
                 href="/create-club"
               >
                 Create Club
@@ -277,9 +271,6 @@ export function SiteHeader() {
             <>
               <Link onClick={() => setOpen(false)} className="py-2" href="/profile">
                 Profile
-              </Link>
-              <Link onClick={() => setOpen(false)} className="py-2" href="/messages">
-                Messages
               </Link>
               <Link onClick={() => setOpen(false)} className="py-2" href="/create-club">
                 Create Club
