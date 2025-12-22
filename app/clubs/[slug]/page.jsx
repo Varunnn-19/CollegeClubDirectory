@@ -102,7 +102,8 @@ setLoading(false)      } finally {
     }
   }, [params.slug, router])
 
-  const handleJoinClub = async () => {
+  const 105
+    = async () => {
     if (!currentUser || !club) {
       router.push("/sign-in")
       return
@@ -113,19 +114,16 @@ setLoading(false)      } finally {
 clubId: club.id || club._id,
       userName: currentUser.name,
       userEmail: currentUser.email,
-      status: club.membershipType === "Open" ? "active" : "pending",
+      status: "pending",
       role: "member",
       joinedAt: new Date().toISOString(),
     }
 
     try {
       const saved = await saveMembership(membership)
-      if (saved.status === "active") {
-        setIsMember(true)
-        setMemberCount((prev) => prev + 1)
-      } else {
-        setIsMember(false)
-      }
+// Status is always "pending" - admin must approve
+          setPendingMembership(true); setIsMember(false);
+          }
     } catch (error) {
       console.error(error)
     }
