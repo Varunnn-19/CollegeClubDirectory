@@ -10,8 +10,6 @@ import eventsRoutes from "./routes/events.js"
 import rsvpsRoutes from "./routes/rsvps.js"
 import announcementsRoutes from "./routes/announcements.js"
 import reviewsRoutes from "./routes/reviews.js"
-import messagesRoutes from "./routes/messages.js"
-
 const app = express()
 const allowedOrigins = [
   "http://localhost:3000",
@@ -51,8 +49,6 @@ app.use("/api/events", eventsRoutes)
 app.use("/api/rsvps", rsvpsRoutes)
 app.use("/api/announcements", announcementsRoutes)
 app.use("/api/reviews", reviewsRoutes)
-app.use("/api/messages", messagesRoutes)
-
 app.use((err, _req, res, _next) => {
   console.error("[Server Error]", err)
   res.status(err.status || 500).json({ message: err.message || "Something went wrong." })
