@@ -157,22 +157,26 @@ export default function ClubAdminPage() {
   }
 
   const handleApproveMember = async (membershipId) => {
+    try {
     const membership = members.find((m) => m.id === membershipId)
     if (!membership) return
     await updateMembership(membershipId, { status: "active" })
     await loadData()
     setSuccess("Member approved!")
     setTimeout(() => setSuccess(""), 3000)
-  }
+  } catch (err) { setError(err.message || "Error"); }
+    }
 
   const handleRejectMember = async (membershipId) => {
+    try {
     const membership = members.find((m) => m.id === membershipId)
     if (!membership) return
     await updateMembership(membershipId, { status: "rejected" })
     await loadData()
     setSuccess("Member request rejected")
     setTimeout(() => setSuccess(""), 3000)
-  }
+  } catch (err) { setError(err.message || "Error"); }
+    }
 
   const handleSaveEvent = async (e) => {
     e.preventDefault()
