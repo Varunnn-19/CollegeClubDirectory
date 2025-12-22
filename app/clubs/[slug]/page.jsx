@@ -124,7 +124,7 @@ clubId: club.id || club._id,
 // Status is always "pending" - admin must approve
           setPendingMembership(true); setIsMember(false);
           }
-    } catch (error) {
+    catch (error) {
       console.error(error)
     }
   }
