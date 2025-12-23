@@ -29,15 +29,7 @@ export default function SignUpPage() {
   const [clubOptions, setClubOptions] = useState([])
 
   useEffect(() => {
-    const loadClubs = async () => {
-      try {
-        const list = await getClubs()
-        setClubOptions(list)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    loadClubs()
+    getClubs().then(setClubOptions).catch(console.error)
   }, [])
 
   const handleChange = (e) => {
@@ -82,19 +74,10 @@ export default function SignUpPage() {
         setLoading(false)
         return
       }
-
-      const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
-      if (!passwordRegex.test(formData.password)) {
-        setError("Password must contain at least one uppercase letter, one special character, and one number")
-        setLoading(false)
-        return
-      }
-    } else {
-      if (!otp.trim()) {
-        setError("Please enter the OTP sent to your email")
-        setLoading(false)
-        return
-      }
+    } else if (!otp.trim()) {
+      setError("Please enter the OTP sent to your email")
+      setLoading(false)
+      return
     }
 
     try {
@@ -102,9 +85,10 @@ export default function SignUpPage() {
         ...formData,
         otp: otpRequested ? otp.trim() : undefined,
       }
+
       const data = await apiRequest("/users/register", {
         method: "POST",
-        body: payload,
+        body: JSON.stringify(payload), // ✅ FIX
       })
 
       if (data.otpRequired) {
@@ -114,13 +98,13 @@ export default function SignUpPage() {
         return
       }
 
-      const { user } = data
-      localStorage.setItem("currentUser", JSON.stringify(user))
+      localStorage.setItem("currentUser", JSON.stringify(data.user))
       window.dispatchEvent(new Event("auth-change"))
-      
-      await new Promise(resolve => setTimeout(resolve, 100))
-      if (user.role === "admin" && user.assignedClubId) {
-        router.push(`/club-admin/${user.assignedClubId}`)
+
+      await new Promise((r) => setTimeout(r, 100))
+
+      if (data.user.role === "admin" && data.user.assignedClubId) {
+        router.push(`/club-admin/${data.user.assignedClubId}`)
       } else {
         router.push("/")
       }
@@ -134,7 +118,7 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-2">
+        <CardHeader>
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>Join the college club directory</CardDescription>
         </CardHeader>
@@ -142,161 +126,33 @@ export default function SignUpPage() {
           <form onSubmit={handleSignUp} className="space-y-3">
             {!otpRequested ? (
               <>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Full Name</label>
-                  <Input
-                    type="text"
-                    name="name"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Email</label>
-                  <Input
-                    type="email"
-                    name="email"
-                    placeholder="john@bmsce.ac.in"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Only @bmsce.ac.in emails are allowed</p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">USN (University Serial Number)</label>
-                  <Input
-                    type="text"
-                    name="usn"
-                    placeholder="1BM21CS001"
-                    value={formData.usn}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Year of Study</label>
-                  <select
-                    name="yearOfStudy"
-                    value={formData.yearOfStudy}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
-                    required
-                  >
-                    <option value="">Select year</option>
-                    <option value="1st">1st Year</option>
-                    <option value="2nd">2nd Year</option>
-                    <option value="3rd">3rd Year</option>
-                    <option value="4th">4th Year</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Phone Number</label>
-                  <Input
-                    type="tel"
-                    name="phoneNumber"
-                    placeholder="9876543210"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Account Type</label>
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
-                  >
-                    <option value="user">Regular User</option>
-                    <option value="admin">Club Admin</option>
-                  </select>
-                </div>
-                {formData.role === "admin" && (
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium">Select Club to Manage</label>
-                    <select
-                      name="assignedClubId"
-                      value={formData.assignedClubId}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
-                      required={formData.role === "admin"}
-                    >
-                      <option value="">Select a club</option>
-                      {clubOptions.map((club) => (
-                        <option key={club.id} value={club.id}>
-                          {club.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Password</label>
-                  <Input
-                    type="password"
-                    name="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Confirm Password</label>
-                  <Input
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+                <Input name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                <Input name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+                <Input name="usn" placeholder="USN" value={formData.usn} onChange={handleChange} required />
+                <Input name="phoneNumber" placeholder="Phone Number" value={formData.phoneNumber} onChange={handleChange} required />
+                <Input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                <Input name="confirmPassword" type="password" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} required />
               </>
             ) : (
-              <div className="space-y-2 py-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">One-Time Password</label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="\d{6}"
-                    placeholder="6-digit code"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Check your @bmsce.ac.in inbox for the code.</p>
-                </div>
-              </div>
+              <Input
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+              />
             )}
 
-            {error && <div className="text-destructive text-sm bg-destructive/10 border border-destructive/20 p-3 rounded">{error}</div>}
-            {info && !error && <div className="text-primary text-sm bg-primary/10 border border-primary/20 p-3 rounded">{info}</div>}
-            
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Processing..." : otpRequested ? "Verify OTP & Sign Up" : "Send OTP"}
+            {error && <div className="text-destructive">{error}</div>}
+            {info && <div className="text-primary">{info}</div>}
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {otpRequested ? "Verify OTP & Sign Up" : "Send OTP"}
             </Button>
-            
-            {otpRequested && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setOtpRequested(false)}
-                disabled={loading}
-              >
-                Back to registration
-              </Button>
-            )}
           </form>
-          <p className="text-sm text-muted-foreground text-center mt-4">
+
+          <p className="text-sm text-center mt-4">
             Already have an account?{" "}
-            <Link href="/sign-in" className="text-blue-600 hover:underline font-medium">
+            <Link href="/sign-in" className="text-primary font-medium">
               Sign in here
             </Link>
           </p>
