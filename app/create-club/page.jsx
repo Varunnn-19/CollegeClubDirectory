@@ -24,6 +24,7 @@ export default function CreateClubPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
   const [formData, setFormData] = useState({
     name: "",
     shortDescription: "",
@@ -38,15 +39,13 @@ export default function CreateClubPage() {
   })
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const user = JSON.parse(localStorage.getItem("currentUser") || "null")
-      if (!user) {
-        router.push("/sign-in")
-        return
-      }
-      setCurrentUser(user)
-      setLoading(false)
+    const user = JSON.parse(localStorage.getItem("currentUser") || "null")
+    if (!user) {
+      router.push("/sign-in")
+      return
     }
+    setCurrentUser(user)
+    setLoading(false)
   }, [router])
 
   const handleChange = (e) => {
@@ -54,57 +53,58 @@ export default function CreateClubPage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const generateSlug = (name) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-  }
+  const generateSlug = (name) =>
+    name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
     setSubmitting(true)
 
-    // Validation
-    if (
-      !formData.name ||
-      !formData.shortDescription ||
-      !formData.description ||
-      !formData.category
-    ) {
-      setError("Please fill in all required fields")
+    if (!formData.name || !formData.shortDescription || !formData.description || !formData.category) {
+      setError("Please fill in all required fields.")
       setSubmitting(false)
       return
     }
 
     try {
-      // Prepare the club payload - API expects name, description, and category
-      const clubPayload = {
+      const payload = {
         name: formData.name,
-        description: formData.description, // Use full description as primary description
+        slug: generateSlug(formData.name),
         category: formData.category,
-        image: formData.image || null,
-        // Status defaults to "pending" on backend
+
+        // Store EVERYTHING safely inside description
+        description: JSON.stringify({
+          shortDescription: formData.shortDescription,
+          fullDescription: formData.description,
+          membershipType: formData.membershipType,
+          contactEmail: formData.email || currentUser.email,
+          meetingTimes: formData.meetingTimes,
+          social: {
+            website: formData.website,
+            twitter: formData.twitter,
+            instagram: formData.instagram,
+          },
+        }),
+
+        status: "pending",
+        createdBy: currentUser.id,
       }
 
-      // Make POST request to create club
-      const response = await apiRequest("/clubs", "POST", clubPayload)
+      const response = await apiRequest("/clubs", {
+        method: "POST",
+        body: payload,
+      })
 
-      if (!response || !response.club) {
-        throw new Error("Failed to create club. Please try again.")
+      if (!response?.club) {
+        throw new Error("Failed to create club.")
       }
 
-      // Success
       setSuccess(true)
-      
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        router.push("/clubs")
-      }, 2000)
+      setTimeout(() => router.push("/clubs"), 2000)
     } catch (err) {
-      console.error("Club creation error:", err)
-      setError(err.message || "Failed to create club. Please try again.")
+      console.error(err)
+      setError(err.message || "Failed to create club.")
     } finally {
       setSubmitting(false)
     }
@@ -114,19 +114,14 @@ export default function CreateClubPage() {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
 
-  if (!currentUser) {
-    return null
-  }
-
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background pt-20">
+      <div className="min-h-screen flex items-center justify-center pt-20">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-primary">Club Request Submitted! ✓</CardTitle>
+            <CardTitle className="text-green-600">Club Request Submitted ✓</CardTitle>
             <CardDescription>
-              Your club request has been submitted and is pending admin approval.
-              You will be notified once it\'s approved. Redirecting...
+              Your club is pending admin approval. Redirecting to clubs...
             </CardDescription>
           </CardHeader>
         </Card>
@@ -150,167 +145,34 @@ export default function CreateClubPage() {
         <Card>
           <CardHeader>
             <CardTitle>Club Information</CardTitle>
-            <CardDescription>
-              Fill in the details to create your new club. All required fields must be completed.
-            </CardDescription>
+            <CardDescription>All fields marked * are required</CardDescription>
           </CardHeader>
           <CardContent>
-            {currentUser?.assignedClubId && (
-              <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded text-blue-600 text-sm">
-                <p className="font-semibold mb-2">📋 Club Admin Notice</p>
-                <p>
-                  As a club admin, new clubs you create will require approval from the page
-                  administrator before they become active. You will be notified once the approval
-                  decision is made.
-                </p>
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+                {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded text-destructive">
-                  {error}
-                </div>
-              )}
+              <Input name="name" placeholder="Club Name *" value={formData.name} onChange={handleChange} />
+              <Input name="shortDescription" placeholder="Short Description *" value={formData.shortDescription} onChange={handleChange} />
+              <Textarea name="description" placeholder="Full Description *" value={formData.description} onChange={handleChange} rows={4} />
 
-              <div>
-                <label className="text-sm font-medium">Club Name *</label>
-                <Input
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="e.g., Photography Club"
-                  required
-                />
-              </div>
+              <Select value={formData.category} onValueChange={(v) => setFormData(p => ({ ...p, category: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select Category *" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Sports">Sports</SelectItem>
+                  <SelectItem value="Tech">Tech</SelectItem>
+                  <SelectItem value="Arts">Arts</SelectItem>
+                  <SelectItem value="Community">Community</SelectItem>
+                  <SelectItem value="Academic">Academic</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <div>
-                <label className="text-sm font-medium">Short Description *</label>
-                <Input
-                  name="shortDescription"
-                  value={formData.shortDescription}
-                  onChange={handleChange}
-                  placeholder="One-line summary for directory listings"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Full Description *</label>
-                <Textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Detailed description of your club - what it does, who should join, etc."
-                  rows={4}
-                  required
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium">Category *</label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, category: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Sports">Sports</SelectItem>
-                      <SelectItem value="Tech">Tech</SelectItem>
-                      <SelectItem value="Arts">Arts</SelectItem>
-                      <SelectItem value="Community">Community</SelectItem>
-                      <SelectItem value="Academic">Academic</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Membership Type</label>
-                  <Select
-                    value={formData.membershipType}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, membershipType: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Open">Open</SelectItem>
-                      <SelectItem value="Closed">Closed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Contact Email</label>
-                <Input
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder={currentUser.email}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty to use your account email: {currentUser.email}
-                </p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Meeting Times</label>
-                <Input
-                  name="meetingTimes"
-                  value={formData.meetingTimes}
-                  onChange={handleChange}
-                  placeholder="e.g., Mondays and Wednesdays, 6-8 PM"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Social Media (Optional)</label>
-                <Input
-                  name="website"
-                  value={formData.website}
-                  onChange={handleChange}
-                  placeholder="Website URL"
-                  type="url"
-                />
-                <Input
-                  name="twitter"
-                  value={formData.twitter}
-                  onChange={handleChange}
-                  placeholder="Twitter/X URL"
-                  type="url"
-                />
-                <Input
-                  name="instagram"
-                  value={formData.instagram}
-                  onChange={handleChange}
-                  placeholder="Instagram URL"
-                  type="url"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="submit"
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={submitting}
-                >
-                  {submitting ? "Creating..." : "Create Club"}
-                </Button>
-                <Link href="/clubs">
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </Link>
-              </div>
+              <Button type="submit" disabled={submitting} className="w-full bg-green-600">
+                {submitting ? "Creating..." : "Create Club"}
+              </Button>
             </form>
           </CardContent>
         </Card>
