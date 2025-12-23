@@ -26,9 +26,9 @@ export default function SignUpPage() {
 
   const [otp, setOtp] = useState("")
   const [otpRequested, setOtpRequested] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
+  const [loading, setLoading] = useState(false)
   const [clubOptions, setClubOptions] = useState([])
 
   useEffect(() => {
@@ -51,12 +51,36 @@ export default function SignUpPage() {
          STEP 1: SEND OTP
       ===================== */
       if (!otpRequested) {
+        if (
+          !formData.name ||
+          !formData.email ||
+          !formData.usn ||
+          !formData.yearOfStudy ||
+          !formData.phoneNumber ||
+          !formData.password
+        ) {
+          throw new Error("All fields are required")
+        }
+
         if (!formData.email.endsWith("@bmsce.ac.in")) {
           throw new Error("Email must be from @bmsce.ac.in domain")
         }
 
         if (formData.password !== formData.confirmPassword) {
           throw new Error("Passwords do not match")
+        }
+
+        if (formData.role === "admin" && !formData.assignedClubId) {
+          throw new Error("Please select a club to manage")
+        }
+
+        const passwordRegex =
+          /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
+
+        if (!passwordRegex.test(formData.password)) {
+          throw new Error(
+            "Password must contain at least one uppercase letter, one special character, and one number"
+          )
         }
 
         const payload = {
@@ -67,7 +91,8 @@ export default function SignUpPage() {
           yearOfStudy: formData.yearOfStudy,
           phoneNumber: formData.phoneNumber,
           role: formData.role,
-          assignedClubId: formData.role === "admin" ? formData.assignedClubId : "",
+          assignedClubId:
+            formData.role === "admin" ? formData.assignedClubId : "",
         }
 
         const res = await apiRequest("/users/register", {
@@ -98,10 +123,20 @@ export default function SignUpPage() {
         },
       })
 
-      localStorage.setItem("currentUser", JSON.stringify(verifyRes.user))
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify(verifyRes.user)
+      )
       window.dispatchEvent(new Event("auth-change"))
 
-      router.push("/")
+      if (
+        verifyRes.user.role === "admin" &&
+        verifyRes.user.assignedClubId
+      ) {
+        router.push(`/club-admin/${verifyRes.user.assignedClubId}`)
+      } else {
+        router.push("/")
+      }
     } catch (err) {
       setError(err.message || "Signup failed")
     } finally {
@@ -112,35 +147,64 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg">
-        <CardHeader>
-          <CardTitle>Create Account</CardTitle>
-          <CardDescription>Join the college club directory</CardDescription>
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardDescription>
+            Join the college club directory
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-3">
-
             {!otpRequested ? (
               <>
                 <Input name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
-                <Input name="email" type="email" placeholder="your@bmsce.ac.in" value={formData.email} onChange={handleChange} required />
+                <Input name="email" type="email" placeholder="john@bmsce.ac.in" value={formData.email} onChange={handleChange} required />
                 <Input name="usn" placeholder="USN" value={formData.usn} onChange={handleChange} required />
 
                 <select
                   name="yearOfStudy"
                   value={formData.yearOfStudy}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full px-3 py-2 border rounded-md"
                   required
                 >
-                  <option value="">Select Year</option>
-                  <option value="1st">1st</option>
-                  <option value="2nd">2nd</option>
-                  <option value="3rd">3rd</option>
-                  <option value="4th">4th</option>
+                  <option value="">Select year</option>
+                  <option value="1st">1st Year</option>
+                  <option value="2nd">2nd Year</option>
+                  <option value="3rd">3rd Year</option>
+                  <option value="4th">4th Year</option>
                 </select>
 
                 <Input name="phoneNumber" placeholder="Phone Number" value={formData.phoneNumber} onChange={handleChange} required />
+
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="user">Regular User</option>
+                  <option value="admin">Club Admin</option>
+                </select>
+
+                {formData.role === "admin" && (
+                  <select
+                    name="assignedClubId"
+                    value={formData.assignedClubId}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border rounded-md"
+                    required
+                  >
+                    <option value="">Select a club</option>
+                    {clubOptions.map((club) => (
+                      <option key={club.id} value={club.id}>
+                        {club.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
                 <Input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
                 <Input name="confirmPassword" type="password" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} required />
               </>
@@ -153,18 +217,47 @@ export default function SignUpPage() {
               />
             )}
 
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-            {info && <p className="text-green-600 text-sm">{info}</p>}
+            {error && (
+              <div className="text-destructive text-sm bg-destructive/10 border border-destructive/20 p-3 rounded">
+                {error}
+              </div>
+            )}
 
-            <Button className="w-full" disabled={loading}>
-              {loading ? "Processing..." : otpRequested ? "Verify OTP" : "Send OTP"}
+            {info && !error && (
+              <div className="text-primary text-sm bg-primary/10 border border-primary/20 p-3 rounded">
+                {info}
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading
+                ? "Processing..."
+                : otpRequested
+                ? "Verify OTP & Sign Up"
+                : "Send OTP"}
             </Button>
+
+            {otpRequested && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setOtpRequested(false)
+                  setOtp("")
+                  setInfo("")
+                }}
+                disabled={loading}
+              >
+                Back to registration
+              </Button>
+            )}
           </form>
 
-          <p className="text-sm text-center mt-4">
+          <p className="text-sm text-muted-foreground text-center mt-4">
             Already have an account?{" "}
-            <Link href="/sign-in" className="text-blue-600 underline">
-              Sign in
+            <Link href="/sign-in" className="text-blue-600 hover:underline font-medium">
+              Sign in here
             </Link>
           </p>
         </CardContent>
