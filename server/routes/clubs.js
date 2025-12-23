@@ -10,31 +10,45 @@ import { buildClubStats } from "../utils/stats.js"
 
 const router = express.Router()
 
+/**
+ * Emails allowed to approve/reject clubs
+ * Set in .env as:
+ * APPROVER_EMAILS=admin1@gmail.com,admin2@gmail.com
+ */
 const APPROVER_EMAILS = (process.env.APPROVER_EMAILS || "")
   .split(",")
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean)
 
+/* =====================================================
+   GET ALL CLUBS (OPTIONAL FILTER BY STATUS OR SLUG)
+===================================================== */
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    // Handle slug query parameter
+    // Fetch by slug
     if (req.query.slug) {
       const club = await Club.findOne({ slug: req.query.slug })
       if (!club) {
-        return res.status(404).json({ clubs: [] })
+        return res.json({ clubs: [] })
       }
+
       const stats = await buildClubStats([club._id])
       return res.json({
-        clubs: [{
-          ...club.toObject(),
-          id: club._id,
-          stats: stats[club._id] || { memberCount: 0, rating: 0, reviewCount: 0 },
-        }],
+        clubs: [
+          {
+            ...club.toObject(),
+            id: club._id,
+            stats: stats[club._id] || {
+              memberCount: 0,
+              rating: 0,
+              reviewCount: 0,
+            },
+          },
+        ],
       })
     }
 
-    // Only show approved clubs to regular users, admins can see all
     const statusFilter = req.query.status || "approved"
     const clubs = await Club.find(
       statusFilter === "all" ? {} : { status: statusFilter }
@@ -42,40 +56,37 @@ router.get(
       .sort({ name: 1 })
       .lean()
 
-    const stats = await buildClubStats(clubs.map((club) => club._id))
+    const stats = await buildClubStats(clubs.map((c) => c._id))
 
-    const payload = clubs.map((club) => ({
-      ...club,
-      id: club._id,
-      stats: {
-        memberCount: stats[club._id]?.memberCount || 0,
-        rating: stats[club._id]?.rating || 0,
-        reviewCount: stats[club._id]?.reviewCount || 0,
-      },
-    }))
-    res.json({ clubs: payload })
+    res.json({
+      clubs: clubs.map((club) => ({
+        ...club,
+        id: club._id,
+        stats: {
+          memberCount: stats[club._id]?.memberCount || 0,
+          rating: stats[club._id]?.rating || 0,
+          reviewCount: stats[club._id]?.reviewCount || 0,
+        },
+      })),
+    })
   })
 )
 
+/* =====================================================
+   GET CLUB BY ID OR SLUG
+===================================================== */
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const { id } = req.params
-
-    // Try to find by ObjectId first (if valid)
     let club = null
+
     if (mongoose.Types.ObjectId.isValid(id)) {
       club = await Club.findById(id)
     }
 
-    // If not found by ObjectId, try to find by slug
     if (!club) {
       club = await Club.findOne({ slug: id })
-    }
-
-    // If still not found, try to find by numeric ID or name
-    if (!club) {
-      club = await Club.findOne({ $or: [{ name: id }] })
     }
 
     if (!club) {
@@ -91,7 +102,11 @@ router.get(
       club: {
         ...club.toObject(),
         id: club._id,
-        stats: stats[club._id] || { memberCount: 0, rating: 0, reviewCount: 0 },
+        stats: stats[club._id] || {
+          memberCount: 0,
+          rating: 0,
+          reviewCount: 0,
+        },
       },
       events,
       announcements,
@@ -100,59 +115,78 @@ router.get(
   })
 )
 
+/* =====================================================
+   CREATE CLUB (PENDING BY DEFAULT)
+===================================================== */
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const { name, description, category, image, status } = req.body
+    const { name, description, category, image } = req.body
+
     if (!name || !description || !category) {
       return res.status(400).json({ message: "Missing required fields." })
     }
+
     const club = await Club.create({
       name,
       description,
       category,
       image,
-      status: status || "pending",
+      status: "pending",
     })
+
     res.status(201).json({ club })
   })
 )
 
+/* =====================================================
+   APPROVE / REJECT / UPDATE CLUB
+===================================================== */
 router.patch(
   "/:id",
   asyncHandler(async (req, res) => {
-    const approverEmail = req.headers["x-approver-email"]
+    const { status, approverEmail } = req.body
 
-    // Authorization check for club approval/rejection
-    if (req.body.status === "approved" || req.body.status === "rejected") {
+    // Approval / rejection authorization
+    if (status === "approved" || status === "rejected") {
       if (!approverEmail) {
         return res.status(401).json({ message: "Approver email required." })
       }
 
       const email = approverEmail.toLowerCase()
       if (APPROVER_EMAILS.length > 0 && !APPROVER_EMAILS.includes(email)) {
-        return res.status(403).json({ message: "You are not authorized to approve clubs." })
+        return res
+          .status(403)
+          .json({ message: "You are not authorized to approve clubs." })
       }
     }
-    const updates = { ...req.body }
-    const club = await Club.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    })
+
+    const club = await Club.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    )
+
     if (!club) {
       return res.status(404).json({ message: "Club not found." })
     }
+
     res.json({ club })
   })
 )
 
+/* =====================================================
+   DELETE CLUB
+===================================================== */
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {
     const club = await Club.findByIdAndDelete(req.params.id)
+
     if (!club) {
       return res.status(404).json({ message: "Club not found." })
     }
+
     res.json({ message: "Club deleted successfully." })
   })
 )
