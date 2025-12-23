@@ -4,91 +4,124 @@ import asyncHandler from "../utils/asyncHandler.js"
 
 const router = express.Router()
 
+/* =========================
+   USER ROUTES
+========================= */
+
+// Get memberships by user
 router.get(
   "/user/:userId",
   asyncHandler(async (req, res) => {
-    const memberships = await Membership.find({ userId: req.params.userId }).sort({ createdAt: -1 })
+    const memberships = await Membership.find({ userId: req.params.userId })
+      .sort({ createdAt: -1 })
     res.json({ memberships })
   })
 )
 
+// Get memberships by club
 router.get(
   "/club/:clubId",
   asyncHandler(async (req, res) => {
-    const memberships = await Membership.find({ clubId: req.params.clubId }).sort({ createdAt: -1 })
+    const memberships = await Membership.find({ clubId: req.params.clubId })
+      .sort({ createdAt: -1 })
     res.json({ memberships })
   })
 )
 
+// Create membership (Join club)
 router.post(
   "/",
   asyncHandler(async (req, res) => {
     const { userId, clubId } = req.body
-    
+
     if (!userId || !clubId) {
       return res.status(400).json({ message: "Missing required userId or clubId." })
     }
 
-    
-    // Check if user is already a member
-    const existingMembership = await Membership.findOne({
-      userId: req.body.userId,
-      clubId: req.body.clubId
-    })
+    const existingMembership = await Membership.findOne({ userId, clubId })
     if (existingMembership) {
-      return res.status(409).json({ message: "User is already a member of this club." })
+      return res.status(409).json({
+        message: "User is already a member or has a pending request."
+      })
     }
+
     const membership = await Membership.create({
       ...req.body,
       role: req.body.role || "member",
-      status: req.body.status || "pending"
+      status: "pending", // 🔥 ALWAYS pending on join
     })
-    
+
     res.status(201).json({ membership })
   })
 )
 
-router.patch(
-  "/:id",
+/* =========================
+   ADMIN ROUTES
+========================= */
+
+// 🔍 Admin – View pending join requests
+router.get(
+  "/admin",
   asyncHandler(async (req, res) => {
-    const membership = await Membership.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
-    if (!membership) return res.status(404).json({ message: "Membership not found." })
-    res.json({ membership })
+    const { status = "pending" } = req.query
+
+    const memberships = await Membership.find({ status })
+      .populate("userId", "name email")
+      .populate("clubId", "name")
+
+    res.json({ memberships })
   })
 )
 
+// ✅ Admin – Approve membership
+router.patch(
+  "/admin/:id/approve",
+  asyncHandler(async (req, res) => {
+    const membership = await Membership.findById(req.params.id)
+
+    if (!membership) {
+      return res.status(404).json({ message: "Membership not found." })
+    }
+
+    membership.status = "joined"
+    await membership.save()
+
+    res.json({
+      membership,
+      message: "Membership approved."
+    })
+  })
+)
+
+// ❌ Admin – Reject membership
+router.patch(
+  "/admin/:id/reject",
+  asyncHandler(async (req, res) => {
+    const membership = await Membership.findById(req.params.id)
+
+    if (!membership) {
+      return res.status(404).json({ message: "Membership not found." })
+    }
+
+    membership.status = "rejected"
+    await membership.save()
+
+    res.json({
+      message: "Membership rejected."
+    })
+  })
+)
+
+// 🗑 Delete membership (leave club)
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {
     const membership = await Membership.findByIdAndDelete(req.params.id)
-    if (!membership) return res.status(404).json({ message: "Membership not found." })
-    res.json({ message: "Membership deleted successfully." })
-  })
-)
-
-// Approve or reject membership request
-router.patch(
-  "/:id/approve",
-  asyncHandler(async (req, res) => {
-    const { status } = req.body // 'active' to approve, 'rejected' to reject
-    
-    if (!status || !['active', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: "Invalid status. Use 'active' or 'rejected'." })
-    }
-    
-    const membership = await Membership.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    )
-    
     if (!membership) {
       return res.status(404).json({ message: "Membership not found." })
     }
-    
-    res.json({ membership, message: `Membership ${status === 'active' ? 'approved' : 'rejected'}.` })
+    res.json({ message: "Membership deleted successfully." })
   })
 )
-
 
 export default router
