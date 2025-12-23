@@ -103,23 +103,6 @@ const handleSubmit = async (e) => {
   }
 }
 
-
-
-
-      // Note: User will be promoted to admin only after club is approved
-      // This will be handled in the admin approval process
-
-      setSuccess(true)
-      setTimeout(() => {
-        router.push("/")
-      }, 3000)
-    } catch (err) {
-      setError(err.message || "Failed to create club. Please try again.")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
