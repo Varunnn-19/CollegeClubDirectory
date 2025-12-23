@@ -69,19 +69,38 @@ export default function ClubDetailPage() {
         setRating(detail.stats?.rating || 0)
 
         if (user) {
-          const memberships = await getMembershipsByUser(user.id)
-          if (!mounted) return
-          const activeMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "joined")
-     const pendingMembership = memberships.find((m) => m.clubId === detail.club._id && m.status === "pending")
-setIsMember(!!activeMembershiip)
-            setPendingMembership(!!pendingMembership)
-          const userRsvps = await getEventRSVPsByUser(user.id)
-          if (!mounted) return
-          const rsvpMap = {}
-          userRsvps.forEach((r) => {
-            rsvpMap[r.eventId] = r.status
-          })
-          setRsvps(rsvpMap)
+// inside useEffect, membership check block
+
+if (user) {
+  const memberships = await getMembershipsByUser(user.id)
+  if (!mounted) return
+
+  const activeMembership = memberships.find(
+    (m) => m.clubId === detail.club._id && m.status === "joined"
+  )
+
+  const pendingMembership = memberships.find(
+    (m) => m.clubId === detail.club._id && m.status === "pending"
+  )
+
+  // ✅ FIXED TYPO HERE
+  setIsMember(!!activeMembership)
+  setPendingMembership(!!pendingMembership)
+
+  const userRsvps = await getEventRSVPsByUser(user.id)
+  if (!mounted) return
+
+  const rsvpMap = {}
+  userRsvps.forEach((r) => {
+    rsvpMap[r.eventId] = r.status
+  })
+  setRsvps(rsvpMap)
+} else {
+  setIsMember(false)
+  setPendingMembership(false)
+  setRsvps({})
+}
+
         } else {
           setIsMember(false)
           setRsvps({})
