@@ -26,26 +26,22 @@ export default function AdminDashboard() {
       router.push("/sign-in")
       return
     }
-    
+
     const user = JSON.parse(userString)
-    
-    // Authorization Check:
-    // 1. Must be an admin
-    // 2. Must NOT be a club admin (club admins have assignedClubId)
+
     if (user.role !== "admin") {
       router.push("/")
       return
     }
-    
+
     if (user.assignedClubId) {
-      setError("Club admins are not authorized to approve new clubs. Only page admins can perform this action.")
+      setError("Club admins cannot approve new clubs.")
       setLoading(false)
       return
     }
 
-    // 3. If approver emails list exists, must be in it
     if (approverEmails.length > 0 && !approverEmails.includes(user.email.toLowerCase())) {
-      setError("You are not authorized as a page approver. Please contact the site administrator.")
+      setError("You are not authorized to approve clubs.")
       setLoading(false)
       return
     }
@@ -58,8 +54,8 @@ export default function AdminDashboard() {
     try {
       const response = await apiRequest("/clubs?status=pending")
       setPendingClubs(response.clubs || [])
-    } catch (error) {
-      console.error("Failed to load pending clubs:", error)
+    } catch (err) {
+      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -67,26 +63,16 @@ export default function AdminDashboard() {
 
   const handleApprove = async (clubId) => {
     setProcessing((prev) => ({ ...prev, [clubId]: "approving" }))
+
     try {
-      const club = pendingClubs.find(c => c.id === clubId)
-      
       await apiRequest(`/clubs/${clubId}`, {
         method: "PATCH",
-        headers: { "x-approver-email": currentUser.email },
-        body: { status: "approved" },
+        body: JSON.stringify({
+          status: "approved",
+          approverEmail: currentUser.email,
+        }),
       })
-      
-      if (club?.createdBy) {
-        try {
-          await apiRequest(`/users/${club.createdBy}`, {
-            method: "PATCH",
-            body: { role: "admin", assignedClubId: clubId },
-          })
-        } catch (userError) {
-          console.error("Failed to promote user to admin:", userError)
-        }
-      }
-      
+
       await loadPendingClubs()
     } catch (err) {
       console.error("Failed to approve club:", err)
@@ -98,14 +84,18 @@ export default function AdminDashboard() {
 
   const handleReject = async (clubId) => {
     if (!confirm("Are you sure you want to reject this club?")) return
-    
+
     setProcessing((prev) => ({ ...prev, [clubId]: "rejecting" }))
+
     try {
       await apiRequest(`/clubs/${clubId}`, {
         method: "PATCH",
-        headers: { "x-approver-email": currentUser.email },
-        body: { status: "rejected" },
+        body: JSON.stringify({
+          status: "rejected",
+          approverEmail: currentUser.email,
+        }),
       })
+
       await loadPendingClubs()
     } catch (err) {
       console.error("Failed to reject club:", err)
@@ -121,19 +111,16 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background pt-24">
-        <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="min-h-screen pt-24">
+        <div className="mx-auto max-w-3xl px-4">
           <Card>
             <CardHeader>
               <CardTitle>Admin Access Restricted</CardTitle>
-              <CardDescription>Club approval is restricted to page administrators.</CardDescription>
+              <CardDescription>{error}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-destructive">{error}</p>
               <Link href="/">
-                <Button variant="outline" className="mt-4">
-                  Return Home
-                </Button>
+                <Button variant="outline">Return Home</Button>
               </Link>
             </CardContent>
           </Card>
@@ -143,82 +130,44 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-24">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Admin Dashboard - Club Approvals</h1>
-          <div className="flex gap-2">
-            <Link href="/">
-              <Button variant="outline">Back to Home</Button>
-            </Link>
-          </div>
-        </div>
-
-        {approverEmails.length === 0 && (
-          <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-600 text-sm">
-            Warning: No approver emails configured. Only page admins (admins with no assigned club) can approve.
-          </div>
-        )}
+    <div className="min-h-screen pt-24">
+      <div className="mx-auto max-w-6xl px-4">
+        <h1 className="text-3xl font-bold mb-6">Admin Dashboard - Club Approvals</h1>
 
         {pendingClubs.length === 0 ? (
           <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground py-8">No pending club requests at this time.</p>
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              No pending club requests.
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
             {pendingClubs.map((club) => (
-              <Card key={club.id} className="overflow-hidden">
+              <Card key={club.id}>
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-2">{club.name}</CardTitle>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <Badge variant="secondary">{club.category}</Badge>
-                        <Badge>{club.membershipType}</Badge>
-                        <Badge variant="outline" className="bg-yellow-500/20 text-yellow-600">
-                          Pending Approval
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2">{club.shortDescription}</p>
-                    </div>
+                  <CardTitle>{club.name}</CardTitle>
+                  <div className="flex gap-2">
+                    <Badge>{club.category}</Badge>
+                    <Badge variant="outline">Pending</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-medium mb-1">Full Description:</p>
-                      <p className="text-sm text-muted-foreground">{club.fullDescription}</p>
-                    </div>
-                    {club.email && (
-                      <div>
-                        <p className="text-sm font-medium">Contact Email:</p>
-                        <p className="text-sm text-muted-foreground">{club.email}</p>
-                      </div>
-                    )}
-                    {club.meetingTimes && (
-                      <div>
-                        <p className="text-sm font-medium">Meeting Times:</p>
-                        <p className="text-sm text-muted-foreground">{club.meetingTimes}</p>
-                      </div>
-                    )}
-                    <div className="flex gap-2 pt-4 border-t">
-                      <Button
-                        onClick={() => handleApprove(club.id)}
-                        disabled={processing[club.id] === "approving" || processing[club.id] === "rejecting"}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        {processing[club.id] === "approving" ? "Approving..." : "Approve"}
-                      </Button>
-                      <Button
-                        onClick={() => handleReject(club.id)}
-                        disabled={processing[club.id] === "approving" || processing[club.id] === "rejecting"}
-                        variant="destructive"
-                      >
-                        {processing[club.id] === "rejecting" ? "Rejecting..." : "Reject"}
-                      </Button>
-                    </div>
+                  <p className="text-sm mb-4">{club.fullDescription}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleApprove(club.id)}
+                      disabled={processing[club.id]}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {processing[club.id] === "approving" ? "Approving..." : "Approve"}
+                    </Button>
+                    <Button
+                      onClick={() => handleReject(club.id)}
+                      disabled={processing[club.id]}
+                      variant="destructive"
+                    >
+                      {processing[club.id] === "rejecting" ? "Rejecting..." : "Reject"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
