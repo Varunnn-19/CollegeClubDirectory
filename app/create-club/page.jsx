@@ -103,6 +103,7 @@ const handleSubmit = async (e) => {
   }
 }
 
+
       // Note: User will be promoted to admin only after club is approved
       // This will be handled in the admin approval process
 
