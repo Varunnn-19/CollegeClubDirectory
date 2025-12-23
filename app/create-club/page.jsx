@@ -91,28 +91,17 @@ const handleSubmit = async (e) => {
     await saveClub(clubPayload)
 
     setSuccess(true)
+
     setTimeout(() => {
       router.push("/")
     }, 3000)
+
   } catch (err) {
     setError(err.message || "Failed to create club. Please try again.")
   } finally {
     setSubmitting(false)
   }
 }
-
-
-    try {
-     const clubPayload = {
-  name: formData.name,
-  description: formData.fullDescription,
-  category: formData.category,
-  membershipType: formData.membershipType.toLowerCase(), // backend usually expects lowercase
-}
-    }
-
-     await saveClub(clubPayload)
-
 
       // Note: User will be promoted to admin only after club is approved
       // This will be handled in the admin approval process
