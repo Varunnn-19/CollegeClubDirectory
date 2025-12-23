@@ -19,9 +19,7 @@ const generateOtp = () =>
 router.post(
   "/register",
   asyncHandler(async (req, res) => {
-    if (!req.body) {
-      return res.status(400).json({ message: "Request body missing." })
-    }
+    const body = req.body || {}
 
     const {
       name,
@@ -33,16 +31,16 @@ router.post(
       role = "user",
       assignedClubId = "",
       otp,
-    } = req.body
+    } = body
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing required fields." })
     }
 
     if (!email.endsWith(APPROVED_DOMAIN)) {
-      return res
-        .status(400)
-        .json({ message: "Email must be from @bmsce.ac.in domain." })
+      return res.status(400).json({
+        message: "Email must be from @bmsce.ac.in domain.",
+      })
     }
 
     const passwordRegex =
@@ -62,26 +60,32 @@ router.post(
       )
 
       if (!user) {
-        return res
-          .status(404)
-          .json({ message: "Registration session not found." })
+        return res.status(404).json({
+          message: "Registration session not found.",
+        })
       }
 
       if (user.otpCode !== otp || user.otpExpiresAt < Date.now()) {
-        return res.status(400).json({ message: "Invalid or expired OTP." })
+        return res.status(400).json({
+          message: "Invalid or expired OTP.",
+        })
       }
 
       user.otpCode = undefined
       user.otpExpiresAt = undefined
       await user.save()
 
-      return res.status(201).json({ user: sanitizeUser(user) })
+      return res.status(201).json({
+        user: sanitizeUser(user),
+      })
     }
 
     const existing = await User.findOne({ email })
 
     if (existing && !existing.otpCode) {
-      return res.status(400).json({ message: "Email already registered." })
+      return res.status(400).json({
+        message: "Email already registered.",
+      })
     }
 
     const otpCode = generateOtp()
@@ -117,23 +121,9 @@ router.post(
       })
     }
 
-    const otpResult = await sendOtpEmail(email, otpCode)
+    await sendOtpEmail(email, otpCode)
 
-    if (otpResult.simulated) {
-      return res.status(200).json({
-        otpRequired: true,
-        message: `OTP sent (Simulation Mode). Use code: ${otpCode}`,
-        isSimulated: true,
-      })
-    }
-
-    if (!otpResult.success) {
-      return res
-        .status(500)
-        .json({ message: `Email error: ${otpResult.error}` })
-    }
-
-    res.status(200).json({
+    return res.status(200).json({
       otpRequired: true,
       message: "OTP sent to your college email.",
     })
@@ -146,22 +136,22 @@ router.post(
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
-    if (!req.body) {
-      return res.status(400).json({ message: "Request body missing." })
-    }
+    const body = req.body || {}
 
-    const { email, password, otp } = req.body
+    const email = body.email
+    const password = body.password
+    const otp = body.otp
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Missing email or password." })
+      return res.status(400).json({
+        message: "Missing email or password.",
+      })
     }
 
     if (!email.endsWith(APPROVED_DOMAIN)) {
-      return res
-        .status(400)
-        .json({ message: "Email must be from @bmsce.ac.in domain." })
+      return res.status(400).json({
+        message: "Email must be from @bmsce.ac.in domain.",
+      })
     }
 
     const user = await User.findOne({ email }).select(
@@ -169,25 +159,33 @@ router.post(
     )
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials." })
+      return res.status(401).json({
+        message: "Invalid credentials.",
+      })
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash)
     if (!isValid) {
-      return res.status(401).json({ message: "Invalid credentials." })
+      return res.status(401).json({
+        message: "Invalid credentials.",
+      })
     }
 
     /* ---------- OTP VERIFICATION ---------- */
     if (otp) {
       if (user.otpCode !== otp || user.otpExpiresAt < Date.now()) {
-        return res.status(400).json({ message: "Invalid or expired OTP." })
+        return res.status(400).json({
+          message: "Invalid or expired OTP.",
+        })
       }
 
       user.otpCode = undefined
       user.otpExpiresAt = undefined
       await user.save()
 
-      return res.json({ user: sanitizeUser(user) })
+      return res.json({
+        user: sanitizeUser(user),
+      })
     }
 
     const otpCode = generateOtp()
@@ -197,23 +195,9 @@ router.post(
     )
     await user.save()
 
-    const otpResult = await sendOtpEmail(email, otpCode)
+    await sendOtpEmail(email, otpCode)
 
-    if (otpResult.simulated) {
-      return res.status(200).json({
-        otpRequired: true,
-        message: `OTP sent (Simulation Mode). Use code: ${otpCode}`,
-        isSimulated: true,
-      })
-    }
-
-    if (!otpResult.success) {
-      return res
-        .status(500)
-        .json({ message: `Email error: ${otpResult.error}` })
-    }
-
-    res.json({
+    return res.json({
       otpRequired: true,
       message: "OTP sent to your college email.",
     })
@@ -228,9 +212,13 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id)
     if (!user) {
-      return res.status(404).json({ message: "User not found." })
+      return res.status(404).json({
+        message: "User not found.",
+      })
     }
-    res.json({ user: sanitizeUser(user) })
+    res.json({
+      user: sanitizeUser(user),
+    })
   })
 )
 
@@ -240,7 +228,7 @@ router.get(
 router.patch(
   "/id/:id",
   asyncHandler(async (req, res) => {
-    const updates = { ...req.body }
+    const updates = { ...(req.body || {}) }
 
     if (updates.password) {
       updates.passwordHash = await bcrypt.hash(updates.password, 10)
@@ -253,10 +241,14 @@ router.patch(
     })
 
     if (!user) {
-      return res.status(404).json({ message: "User not found." })
+      return res.status(404).json({
+        message: "User not found.",
+      })
     }
 
-    res.json({ user: sanitizeUser(user) })
+    res.json({
+      user: sanitizeUser(user),
+    })
   })
 )
 
