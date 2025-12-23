@@ -12,7 +12,6 @@ import {
   getMembershipsByUser,
   getEventRSVPsByUser,
   getReviewsByUser,
-  getConversations,
   getClubs,
   deleteMembership,
 } from "@/lib/data-utils"
@@ -23,7 +22,6 @@ export default function ProfilePage() {
   const [memberships, setMemberships] = useState([])
   const [rsvps, setRsvps] = useState([])
   const [reviews, setReviews] = useState([])
-  const [conversationCount, setConversationCount] = useState(0)
   const [clubDirectory, setClubDirectory] = useState([])
   const [loading, setLoading] = useState(true)
   const [success, setSuccess] = useState("")
@@ -44,20 +42,17 @@ export default function ProfilePage() {
           userMemberships,
           userRsvps,
           userReviews,
-          userConversations,
           allClubs,
         ] = await Promise.all([
           getMembershipsByUser(user.id),
           getEventRSVPsByUser(user.id),
           getReviewsByUser(user.id),
-          getConversations(user.id),
           getClubs(),
         ])
 
         setMemberships(userMemberships)
         setRsvps(userRsvps)
         setReviews(userReviews)
-        setConversationCount(userConversations.length)
         setClubDirectory(allClubs)
       } catch (err) {
         console.error(err)
