@@ -20,22 +20,46 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true)
       if (
         origin.startsWith("http://localhost:3000") ||
-        origin.startsWith("https://collegeclubdirectoryv1.vercel.app") ||
         origin.includes(".vercel.app")
       ) {
-        return callback(null, true);
+        return callback(null, true)
       }
-      return callback(new Error("Not allowed by CORS"));
+      return callback(new Error("Not allowed by CORS"))
     },
-methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-approver-email",
+    ],
   })
-);
+)
 
-app.options("*", cors());
-app.use(express.json())
+app.options(
+  "*",
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true)
+      if (
+        origin.startsWith("http://localhost:3000") ||
+        origin.includes(".vercel.app")
+      ) {
+        return callback(null, true)
+      }
+      return callback(new Error("Not allowed by CORS"))
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-approver-email",
+    ],
+  })
+)
+
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: Date.now() })
