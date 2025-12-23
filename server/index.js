@@ -16,33 +16,25 @@ const app = express()
 /* =====================
    BODY PARSERS (MUST BE FIRST)
 ===================== */
-app.use(express.json()) // ✅ REQUIRED for req.body
+app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 /* =====================
-   CORS CONFIG
+   CORS (FINAL FIX)
 ===================== */
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow server-to-server & tools like Postman
-      if (!origin) return callback(null, true)
-
-      if (
-        origin.startsWith("http://localhost:3000") ||
-        origin.includes(".vercel.app")
-      ) {
-        return callback(null, true)
-      }
-
-      return callback(new Error("Not allowed by CORS"))
-    },
+    origin: true, // ✅ allow ALL origins (Vercel previews included)
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-approver-email",
+    ],
   })
 )
 
-// handle preflight requests
 app.options("*", cors())
 
 /* =====================
@@ -56,7 +48,7 @@ app.get("/health", (_req, res) => {
 })
 
 /* =====================
-   API ROUTES
+   ROUTES
 ===================== */
 app.use("/api/users", authRoutes)
 app.use("/api/clubs", clubsRoutes)
@@ -67,11 +59,10 @@ app.use("/api/announcements", announcementsRoutes)
 app.use("/api/reviews", reviewsRoutes)
 
 /* =====================
-   GLOBAL ERROR HANDLER (JSON ONLY)
+   ERROR HANDLER (JSON ONLY)
 ===================== */
 app.use((err, _req, res, _next) => {
   console.error("[Server Error]", err)
-
   res.status(err.status || 500).json({
     message: err.message || "Internal server error",
   })
