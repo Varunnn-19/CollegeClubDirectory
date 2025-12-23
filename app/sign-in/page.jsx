@@ -22,6 +22,7 @@ export default function SignInPage() {
     localStorage.setItem("currentUser", JSON.stringify(user))
     window.dispatchEvent(new Event("auth-change"))
     await new Promise((resolve) => setTimeout(resolve, 100))
+
     if (user.role === "admin" && user.assignedClubId) {
       router.push(`/club-admin/${user.assignedClubId}`)
     } else {
@@ -45,12 +46,17 @@ export default function SignInPage() {
       if (!otpRequested) {
         const data = await apiRequest("/users/login", {
           method: "POST",
-          body: { email, password },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
         })
+
         if (data?.user) {
           await completeLogin(data.user)
           return
         }
+
         if (data?.otpRequired) {
           setOtpRequested(true)
           setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
@@ -65,15 +71,21 @@ export default function SignInPage() {
 
       const { user } = await apiRequest("/users/login", {
         method: "POST",
-        body: { email, password, otp: otp.trim() },
+        body: JSON.stringify({
+          email,
+          password,
+          otp: otp.trim(),
+        }),
       })
+
       await completeLogin(user)
     } catch (err) {
+      console.error(err)
       setError(err.message || "An error occurred. Please try again.")
-      // Only reset otpRequested if it was a critical error, but for invalid OTP stay on current screen
+
       if (err.message?.includes("Invalid credentials")) {
-         setOtpRequested(false)
-         setOtp("")
+        setOtpRequested(false)
+        setOtp("")
       }
     } finally {
       setLoading(false)
@@ -99,8 +111,11 @@ export default function SignInPage() {
                 disabled={otpRequested}
                 required
               />
-              <p className="text-xs text-muted-foreground">Only @bmsce.ac.in emails are allowed</p>
+              <p className="text-xs text-muted-foreground">
+                Only @bmsce.ac.in emails are allowed
+              </p>
             </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Password</label>
               <Input
@@ -124,13 +139,22 @@ export default function SignInPage() {
                   onChange={(e) => setOtp(e.target.value)}
                   required
                 />
-                <p className="text-xs text-muted-foreground">Check your @bmsce.ac.in inbox for the code.</p>
+                <p className="text-xs text-muted-foreground">
+                  Check your @bmsce.ac.in inbox for the code.
+                </p>
               </div>
             )}
 
-            {error && <div className="text-destructive text-sm bg-destructive/10 border border-destructive/20 p-3 rounded">{error}</div>}
+            {error && (
+              <div className="text-destructive text-sm bg-destructive/10 border border-destructive/20 p-3 rounded">
+                {error}
+              </div>
+            )}
+
             {info && !error && (
-              <div className="text-primary text-sm bg-primary/10 border border-primary/20 p-3 rounded">{info}</div>
+              <div className="text-primary text-sm bg-primary/10 border border-primary/20 p-3 rounded">
+                {info}
+              </div>
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
@@ -153,8 +177,9 @@ export default function SignInPage() {
               </Button>
             )}
           </form>
+
           <p className="text-sm text-muted-foreground text-center mt-4">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/sign-up" className="text-primary hover:underline font-medium">
               Sign up here
             </Link>
