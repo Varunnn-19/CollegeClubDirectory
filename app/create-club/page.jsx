@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ArrowLeft } from "lucide-react"
-import { saveClub } from "@/lib/data-utils"
 import { apiRequest } from "@/lib/api-client"
 
 export default function CreateClubPage() {
@@ -25,11 +24,10 @@ export default function CreateClubPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-
   const [formData, setFormData] = useState({
     name: "",
     shortDescription: "",
-    fullDescription: "",
+    description: "",
     category: "",
     membershipType: "Open",
     email: "",
@@ -47,7 +45,6 @@ export default function CreateClubPage() {
         return
       }
       setCurrentUser(user)
-           // Note: Club admins can create clubs but will need page admin approval
       setLoading(false)
     }
   }, [router])
@@ -64,44 +61,54 @@ export default function CreateClubPage() {
       .replace(/(^-|-$)/g, "")
   }
 
-const handleSubmit = async (e) => {
-  e.preventDefault()
-  setError("")
-  setSubmitting(true)
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError("")
+    setSubmitting(true)
 
-  if (
-    !formData.name ||
-    !formData.shortDescription ||
-    !formData.fullDescription ||
-    !formData.category
-  ) {
-    setError("Please fill in all required fields")
-    setSubmitting(false)
-    return
-  }
-
-  try {
-    const clubPayload = {
-      name: formData.name,
-      description: formData.fullDescription,
-      category: formData.category,
-      membershipType: formData.membershipType.toLowerCase(),
+    // Validation
+    if (
+      !formData.name ||
+      !formData.shortDescription ||
+      !formData.description ||
+      !formData.category
+    ) {
+      setError("Please fill in all required fields")
+      setSubmitting(false)
+      return
     }
 
-    await saveClub(clubPayload)
+    try {
+      // Prepare the club payload - API expects name, description, and category
+      const clubPayload = {
+        name: formData.name,
+        description: formData.description, // Use full description as primary description
+        category: formData.category,
+        image: formData.image || null,
+        // Status defaults to "pending" on backend
+      }
 
-    setSuccess(true)
+      // Make POST request to create club
+      const response = await apiRequest("/clubs", "POST", clubPayload)
 
-    setTimeout(() => {
-      router.push("/")
-    }, 3000)
+      if (!response || !response.club) {
+        throw new Error("Failed to create club. Please try again.")
+      }
 
-  } catch (err) {
-    setError(err.message || "Failed to create club. Please try again.")
-  } finally {
-    setSubmitting(false)
+      // Success
+      setSuccess(true)
+      
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        router.push("/clubs")
+      }, 2000)
+    } catch (err) {
+      console.error("Club creation error:", err)
+      setError(err.message || "Failed to create club. Please try again.")
+    } finally {
+      setSubmitting(false)
+    }
   }
-}
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
@@ -116,10 +123,10 @@ const handleSubmit = async (e) => {
       <div className="min-h-screen flex items-center justify-center bg-background pt-20">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle className="text-primary">Club Request Submitted!</CardTitle>
+            <CardTitle className="text-primary">Club Request Submitted! ✓</CardTitle>
             <CardDescription>
-              Your club request has been submitted and is pending approval from the admin.
-              You will be notified once it's approved. Redirecting to home...
+              Your club request has been submitted and is pending admin approval.
+              You will be notified once it\'s approved. Redirecting...
             </CardDescription>
           </CardHeader>
         </Card>
@@ -143,18 +150,27 @@ const handleSubmit = async (e) => {
         <Card>
           <CardHeader>
             <CardTitle>Club Information</CardTitle>
-            <CardDescription>Fill in the details to create your new club</CardDescription>
+            <CardDescription>
+              Fill in the details to create your new club. All required fields must be completed.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-                         {currentUser?.assignedClubId && (
+            {currentUser?.assignedClubId && (
               <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded text-blue-600 text-sm">
                 <p className="font-semibold mb-2">📋 Club Admin Notice</p>
-                <p>As a club admin, new clubs you create will require approval from the page administrator before they become active. You will be notified once the approval decision is made.</p>
+                <p>
+                  As a club admin, new clubs you create will require approval from the page
+                  administrator before they become active. You will be notified once the approval
+                  decision is made.
+                </p>
               </div>
             )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded text-destructive">{error}</div>
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded text-destructive">
+                  {error}
+                </div>
               )}
 
               <div>
@@ -174,7 +190,7 @@ const handleSubmit = async (e) => {
                   name="shortDescription"
                   value={formData.shortDescription}
                   onChange={handleChange}
-                  placeholder="Brief description for directory listings"
+                  placeholder="One-line summary for directory listings"
                   required
                 />
               </div>
@@ -182,10 +198,10 @@ const handleSubmit = async (e) => {
               <div>
                 <label className="text-sm font-medium">Full Description *</label>
                 <Textarea
-                  name="fullDescription"
-                  value={formData.fullDescription}
+                  name="description"
+                  value={formData.description}
                   onChange={handleChange}
-                  placeholder="Detailed description of your club"
+                  placeholder="Detailed description of your club - what it does, who should join, etc."
                   rows={4}
                   required
                 />
@@ -196,8 +212,9 @@ const handleSubmit = async (e) => {
                   <label className="text-sm font-medium">Category *</label>
                   <Select
                     value={formData.category}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-                    required
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, category: value }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -241,7 +258,7 @@ const handleSubmit = async (e) => {
                   placeholder={currentUser.email}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty to use your account email
+                  Leave empty to use your account email: {currentUser.email}
                 </p>
               </div>
 
@@ -268,7 +285,7 @@ const handleSubmit = async (e) => {
                   name="twitter"
                   value={formData.twitter}
                   onChange={handleChange}
-                  placeholder="Twitter URL"
+                  placeholder="Twitter/X URL"
                   type="url"
                 />
                 <Input
@@ -281,7 +298,11 @@ const handleSubmit = async (e) => {
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700" disabled={submitting}>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={submitting}
+                >
                   {submitting ? "Creating..." : "Create Club"}
                 </Button>
                 <Link href="/clubs">
@@ -297,4 +318,3 @@ const handleSubmit = async (e) => {
     </div>
   )
 }
-
