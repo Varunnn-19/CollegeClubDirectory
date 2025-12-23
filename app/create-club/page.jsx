@@ -64,16 +64,43 @@ export default function CreateClubPage() {
       .replace(/(^-|-$)/g, "")
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
-    setSubmitting(true)
+const handleSubmit = async (e) => {
+  e.preventDefault()
+  setError("")
+  setSubmitting(true)
 
-    if (!formData.name || !formData.shortDescription || !formData.fullDescription || !formData.category) {
-      setError("Please fill in all required fields")
-      setSubmitting(false)
-      return
+  if (
+    !formData.name ||
+    !formData.shortDescription ||
+    !formData.fullDescription ||
+    !formData.category
+  ) {
+    setError("Please fill in all required fields")
+    setSubmitting(false)
+    return
+  }
+
+  try {
+    const clubPayload = {
+      name: formData.name,
+      description: formData.fullDescription,
+      category: formData.category,
+      membershipType: formData.membershipType.toLowerCase(),
     }
+
+    await saveClub(clubPayload)
+
+    setSuccess(true)
+    setTimeout(() => {
+      router.push("/")
+    }, 3000)
+  } catch (err) {
+    setError(err.message || "Failed to create club. Please try again.")
+  } finally {
+    setSubmitting(false)
+  }
+}
+
 
     try {
      const clubPayload = {
@@ -84,7 +111,8 @@ export default function CreateClubPage() {
 }
     }
 
-      const createdClub = await saveClub(club)
+     await saveClub(clubPayload)
+
 
       // Note: User will be promoted to admin only after club is approved
       // This will be handled in the admin approval process
