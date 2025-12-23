@@ -1,138 +1,93 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, LogOut, ExternalLink } from "lucide-react"
+import { ExternalLink, LogOut } from "lucide-react"
 import {
   getMembershipsByUser,
-  getEventRSVPsByUser,
-  getReviewsByUser,
   getClubs,
   deleteMembership,
 } from "@/lib/data-utils"
 
 export default function ProfilePage() {
   const router = useRouter()
-  const [currentUser, setCurrentUser] = useState(null)
+  const [user, setUser] = useState(null)
   const [memberships, setMemberships] = useState([])
-  const [rsvps, setRsvps] = useState([])
-  const [reviews, setReviews] = useState([])
-  const [clubDirectory, setClubDirectory] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [success, setSuccess] = useState("")
-  const [error, setError] = useState("")
+  const [clubs, setClubs] = useState([])
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const user = JSON.parse(localStorage.getItem("currentUser") || "null")
-      if (!user) {
-        router.push("/sign-in")
-        return
-      }
+    const load = async () => {
+      const u = JSON.parse(localStorage.getItem("currentUser") || "null")
+      if (!u) return router.push("/sign-in")
 
-      setCurrentUser(user)
+      setUser(u)
 
-      try {
-        const [
-          userMemberships,
-          userRsvps,
-          userReviews,
-          allClubs,
-        ] = await Promise.all([
-          getMembershipsByUser(user.id),
-          getEventRSVPsByUser(user.id),
-          getReviewsByUser(user.id),
-          getClubs(),
-        ])
+      const [m, c] = await Promise.all([
+        getMembershipsByUser(u.id),
+        getClubs(),
+      ])
 
-        setMemberships(userMemberships)
-        setRsvps(userRsvps)
-        setReviews(userReviews)
-        setClubDirectory(allClubs)
-      } catch (err) {
-        console.error(err)
-        setError("Failed to load profile data")
-      } finally {
-        setLoading(false)
-      }
+      setMemberships(m)
+      setClubs(c)
     }
 
-    loadProfile()
+    load()
   }, [router])
 
-  const handleLeaveClub = async (clubId, clubName) => {
-    if (!confirm(`Are you sure you want to leave ${clubName}?`)) return
+  if (!user) return null
 
-    try {
-      setError("")
-      await deleteMembership(currentUser.id, clubId)
-      setMemberships((prev) => prev.filter((m) => m.clubId !== clubId))
-      setSuccess(`Successfully left ${clubName}`)
-      setTimeout(() => setSuccess(""), 3000)
-    } catch (err) {
-      console.error(err)
-      setError(`Failed to leave ${clubName}. Please try again.`)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading your profile...</p>
-      </div>
-    )
-  }
-
-  if (!currentUser) return null
-
+  // ✅ FIXED STATUS
   const joinedMemberships = memberships.filter((m) => m.status === "joined")
-  const pendingMemberships = memberships.filter((m) => m.status === "pending")
 
-  const joinedClubs = clubDirectory.filter((c) =>
-    joinedMemberships.some((m) => String(m.clubId) === String(c.id || c._id))
+  const joinedClubs = clubs.filter((club) =>
+    joinedMemberships.some(
+      (m) => String(m.clubId) === String(club.id || club._id)
+    )
   )
 
+  const handleLeave = async (clubId) => {
+    await deleteMembership(user.id, clubId)
+    setMemberships((prev) => prev.filter((m) => m.clubId !== clubId))
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
 
-        {success && <div className="mb-4 text-green-600">{success}</div>}
-        {error && <div className="mb-4 text-red-600">{error}</div>}
+      <Tabs defaultValue="clubs">
+        <TabsList>
+          <TabsTrigger value="clubs">My Clubs</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+        </TabsList>
 
-        <Tabs defaultValue="clubs">
-          <TabsList className="grid grid-cols-2 w-full mb-6">
-            <TabsTrigger value="clubs">My Clubs</TabsTrigger>
-            <TabsTrigger value="profile">Profile Info</TabsTrigger>
-          </TabsList>
-
-          {/* CLUBS TAB */}
-          <TabsContent value="clubs">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <TabsContent value="clubs">
+          {joinedClubs.length === 0 ? (
+            <p>No joined clubs yet.</p>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-4">
               {joinedClubs.map((club) => (
                 <Card key={club.id || club._id}>
                   <CardHeader>
                     <CardTitle>{club.name}</CardTitle>
-                    <CardDescription>{club.category}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm mb-4">{club.shortDescription}</p>
                     <div className="flex gap-2">
-                      <Link href={`/clubs/${club.slug || club.id}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full">
-                          <ExternalLink className="h-4 w-4 mr-2" />
+                      <Link href={`/clubs/${club.slug}`}>
+                        <Button size="sm" variant="outline">
+                          <ExternalLink className="h-4 w-4 mr-1" />
                           View
                         </Button>
                       </Link>
                       <Button
-                        variant="destructive"
                         size="sm"
-                        onClick={() => handleLeaveClub(club.id || club._id, club.name)}
+                        variant="destructive"
+                        onClick={() => handleLeave(club.id || club._id)}
                       >
                         <LogOut className="h-4 w-4" />
                       </Button>
@@ -141,28 +96,28 @@ export default function ProfilePage() {
                 </Card>
               ))}
             </div>
-          </TabsContent>
+          )}
+        </TabsContent>
 
-          {/* PROFILE TAB */}
-          <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Details</CardTitle>
-              </CardHeader>
-              <CardContent className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-slate-600">Full Name</p>
-                  <p className="text-lg">{currentUser.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600">Email</p>
-                  <p className="text-lg">{currentUser.email}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Info</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p><strong>Name:</strong> {user.name}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              <Badge className="mt-2">
+                {user.role === "admin"
+                  ? user.assignedClubId
+                    ? "Club Admin"
+                    : "Page Admin"
+                  : "Student"}
+              </Badge>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
