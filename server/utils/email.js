@@ -24,7 +24,7 @@ function getTransporter() {
   cachedTransporter = nodemailer.createTransport({
     host: EMAIL_HOST,
     port: port,
-    secure: port === 465,
+    secure: false, // Use TLS, not SSL
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
