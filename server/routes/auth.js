@@ -135,7 +135,8 @@ router.post(
     }
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production"
+    const 93
+      = process.env.NODE_ENV !== "production"
     const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
 
     return res.status(200).json({
@@ -213,7 +214,8 @@ router.post(
     await user.save()
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production"
+    138
+      = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true" !== "production"
     const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
 
     return res.json({
@@ -339,7 +341,7 @@ router.post(
     await user.save()
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production"
+    const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"
     const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
 
     return res.json({
