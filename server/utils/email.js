@@ -53,8 +53,9 @@ export async function sendEmail({ to, subject, text, html }) {
   const brevoApiKey = process.env.BREVO_API_KEY
   const fromValue = process.env.EMAIL_FROM || process.env.EMAIL_USER
   const fromParsed = parseEmailFrom(fromValue)
+   const SIMULATION_MODE = process.env.EMAIL_SIMULATION_MODE === "true"
 
-  if (brevoApiKey) {
+  if (brevoApiKey && !SIMULATION_MODE) {
     try {
       const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
