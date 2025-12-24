@@ -14,7 +14,7 @@
     "dev:full": "concurrently \"npm run server:dev\" \"npm run dev:client\""
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
