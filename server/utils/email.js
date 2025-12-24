@@ -42,6 +42,7 @@ function getTransporter() {
 }
 
 export async function sendEmail({ to, subject, text, html }) {
+  console.log("[DEBUG] sendEmail called with:", { to, subject })
   const transporter = getTransporter()
   const code = text.match(/\d{6}/)?.[0] || "N/A"
 
@@ -54,6 +55,7 @@ export async function sendEmail({ to, subject, text, html }) {
     return { success: true, simulated: true, code }
   }
 
+  console.log("[DEBUG] Attempting to send email via SMTP...")
   try {
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,

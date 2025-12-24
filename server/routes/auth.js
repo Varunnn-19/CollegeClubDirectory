@@ -303,11 +303,27 @@ router.patch(
 )
 
 /* =====================================================
+   TEST SMTP ENDPOINT
+===================================================== */
+router.get("/test-smtp", asyncHandler(async (req, res) => {
+  const { sendOtpEmail } = await import("../utils/email.js")
+  const result = await sendOtpEmail("test@example.com", "123456")
+  res.json({ result, envVars: {
+    EMAIL_HOST: process.env.EMAIL_HOST ? "SET" : "MISSING",
+    EMAIL_PORT: process.env.EMAIL_PORT ? "SET" : "MISSING", 
+    EMAIL_USER: process.env.EMAIL_USER ? "SET" : "MISSING",
+    EMAIL_PASS: process.env.EMAIL_PASS ? "SET" : "MISSING",
+    EMAIL_FROM: process.env.EMAIL_FROM ? "SET" : "MISSING"
+  }})
+}))
+
+/* =====================================================
    FORGOT PASSWORD REQUEST
 ===================================================== */
 router.post(
   "/forgot-password",
   asyncHandler(async (req, res) => {
+    console.log("[DEBUG] Forgot password request received:", req.body)
     const { email } = req.body || {}
 
     if (!email) {
