@@ -2,6 +2,13 @@ import nodemailer from "nodemailer"
 
 let cachedTransporter = null
 
+function parseEmailFrom(value) {
+  if (!value) return { email: undefined, name: undefined }
+  const match = value.match(/^(.*)<\s*([^>]+)\s*>\s*$/)
+  if (match) return { name: match[1].trim() || undefined, email: match[2].trim() }
+  return { email: value.trim(), name: undefined }
+}
+
 function getTransporter() {
   if (cachedTransporter) return cachedTransporter
 
@@ -18,7 +25,6 @@ function getTransporter() {
   }
 
   const port = Number(EMAIL_PORT)
-  const isGmail = EMAIL_HOST.includes("gmail.com")
 
   // Use Pool: false for better reliability on cloud platforms with restricted outbound
   cachedTransporter = nodemailer.createTransport({
@@ -42,9 +48,49 @@ function getTransporter() {
 }
 
 export async function sendEmail({ to, subject, text, html }) {
-  console.log("[DEBUG] sendEmail called with:", { to, subject })
-  const transporter = getTransporter()
   const code = text.match(/\d{6}/)?.[0] || "N/A"
+
+  const brevoApiKey = process.env.BREVO_API_KEY
+  const fromValue = process.env.EMAIL_FROM || process.env.EMAIL_USER
+  const fromParsed = parseEmailFrom(fromValue)
+
+  if (brevoApiKey) {
+    try {
+      const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": brevoApiKey,
+          "content-type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify({
+          sender: {
+            email: fromParsed.email,
+            ...(fromParsed.name ? { name: fromParsed.name } : {}),
+          },
+          to: [{ email: to }],
+          subject,
+          textContent: text,
+          htmlContent: html,
+        }),
+      })
+
+      if (!resp.ok) {
+        const body = await resp.text().catch(() => "")
+        console.error(`[Email] Brevo API failed: ${resp.status} ${resp.statusText} ${body}`)
+        return { success: true, simulated: true, code, error: "Brevo API failed" }
+      }
+
+      const data = await resp.json().catch(() => ({}))
+      console.log(`[Email] Sent via Brevo API to ${to}: ${data?.messageId || "OK"}`)
+      return { success: true, simulated: false }
+    } catch (error) {
+      console.error("[Email] Brevo API error", error)
+      return { success: true, simulated: true, code, error: "Brevo API error" }
+    }
+  }
+
+  const transporter = getTransporter()
 
   if (!transporter) {
     console.log("-------------------------------------------------------")
@@ -55,7 +101,6 @@ export async function sendEmail({ to, subject, text, html }) {
     return { success: true, simulated: true, code }
   }
 
-  console.log("[DEBUG] Attempting to send email via SMTP...")
   try {
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
