@@ -213,7 +213,9 @@ router.post(
     await user.save()
 
     const emailResult = await sendOtpEmail(email, otpCode)
-       const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"138
+       const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"
+         
+         
     
     const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
 
