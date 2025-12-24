@@ -48,6 +48,20 @@ export function SiteHeader() {
     }
   }, [])
 
+  const assignedClubId = currentUser?.assignedClubId
+  const hasAssignedClub =
+    assignedClubId !== undefined &&
+    assignedClubId !== null &&
+    String(assignedClubId).trim() !== "" &&
+    String(assignedClubId).trim().toLowerCase() !== "null" &&
+    String(assignedClubId).trim().toLowerCase() !== "undefined"
+
+  const canSeeMyClub =
+    (currentUser?.role === "clubAdmin" || (currentUser?.role === "admin" && hasAssignedClub)) &&
+    hasAssignedClub
+
+  const canSeeApproveClubs = currentUser?.role === "admin" || currentUser?.role === "pageAdmin"
+
   // Force header to stay fixed at top - prevent any scroll movement
   useEffect(() => {
     const header = document.querySelector('header')
@@ -186,7 +200,7 @@ export function SiteHeader() {
               </Link>
             </>
           )}
-          {currentUser?.role === "admin" && (
+          {canSeeApproveClubs && (
             <>
               <Link 
                 className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 active:scale-95"
@@ -194,15 +208,15 @@ export function SiteHeader() {
               >
                 Approve Clubs
               </Link>
-              {currentUser.assignedClubId && (
-                <Link 
-                  className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 active:scale-95"
-                  href={`/club-admin/${currentUser.assignedClubId}`}
-                >
-                  My Club
-                </Link>
-              )}
             </>
+          )}
+          {canSeeMyClub && (
+            <Link 
+              className="text-sm px-4 py-2 rounded-lg font-medium text-foreground transition-all duration-300 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 active:scale-95"
+              href={`/club-admin/${assignedClubId}`}
+            >
+              My Club
+            </Link>
           )}
         <div className="flex items-center gap-2">
           {mounted && currentUser ? (
@@ -277,17 +291,17 @@ export function SiteHeader() {
               </Link>
             </>
           )}
-          {currentUser?.role === "admin" && (
+          {canSeeApproveClubs && (
             <>
               <Link onClick={() => setOpen(false)} className="py-2" href="/admin/dashboard">
                 Approve Clubs
               </Link>
-              {currentUser.assignedClubId && (
-                <Link onClick={() => setOpen(false)} className="py-2" href={`/club-admin/${currentUser.assignedClubId}`}>
-                  My Club
-                </Link>
-              )}
             </>
+          )}
+          {canSeeMyClub && (
+            <Link onClick={() => setOpen(false)} className="py-2" href={`/club-admin/${assignedClubId}`}>
+              My Club
+            </Link>
           )}
           {currentUser ? (
             <div className="flex flex-col gap-2 pt-2 border-t">

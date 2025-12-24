@@ -1,4 +1,4 @@
-const API_SERVER_URL = process.env.API_SERVER_URL || "http://localhost:4000"
+const API_SERVER_URL = process.env.API_SERVER_URL
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -9,6 +9,8 @@ const nextConfig = {
     unoptimized: true,
   },
   async rewrites() {
+    if (!API_SERVER_URL) return []
+
     return [
       {
         source: "/api/:path*",

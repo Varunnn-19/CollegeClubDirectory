@@ -65,7 +65,8 @@ export default function SignUpPage() {
         return
       }
 
-      if (formData.role === "admin" && !formData.assignedClubId) {
+      const isClubAdmin = formData.role === "clubAdmin"
+      if (isClubAdmin && !formData.assignedClubId) {
         setError("Please select a club to manage")
         setLoading(false)
         return
@@ -119,7 +120,8 @@ export default function SignUpPage() {
       window.dispatchEvent(new Event("auth-change"))
       
       await new Promise(resolve => setTimeout(resolve, 100))
-      if (user.role === "admin" && user.assignedClubId) {
+      const isClubAdminUser = user.role === "clubAdmin" || (user.role === "admin" && user.assignedClubId)
+      if (isClubAdminUser && user.assignedClubId) {
         router.push(`/club-admin/${user.assignedClubId}`)
       } else {
         router.push("/")
@@ -212,10 +214,10 @@ export default function SignUpPage() {
                     className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
                   >
                     <option value="user">Regular User</option>
-                    <option value="admin">Club Admin</option>
+                    <option value="clubAdmin">Club Admin</option>
                   </select>
                 </div>
-                {formData.role === "admin" && (
+                {formData.role === "clubAdmin" && (
                   <div className="space-y-1">
                     <label className="text-sm font-medium">Select Club to Manage</label>
                     <select
@@ -223,7 +225,7 @@ export default function SignUpPage() {
                       value={formData.assignedClubId}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
-                      required={formData.role === "admin"}
+                      required={formData.role === "clubAdmin"}
                     >
                       <option value="">Select a club</option>
                       {clubOptions.map((club) => (

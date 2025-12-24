@@ -33,6 +33,19 @@ router.post(
       otp,
     } = body
 
+    if (role === "pageAdmin") {
+      return res.status(403).json({
+        message: "Page admin accounts can only be created by an administrator in the database.",
+      })
+    }
+
+    const normalizedRole = role === "admin" ? "clubAdmin" : role
+    const wantsClubAdmin = normalizedRole === "clubAdmin"
+
+    if (wantsClubAdmin && (!assignedClubId || String(assignedClubId).trim() === "")) {
+      return res.status(400).json({ message: "Club admins must select a club to manage." })
+    }
+
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing required fields." })
     }
@@ -97,8 +110,8 @@ router.post(
       existing.usn = usn
       existing.yearOfStudy = yearOfStudy
       existing.phoneNumber = phoneNumber
-      existing.role = role
-      existing.assignedClubId = assignedClubId
+      existing.role = normalizedRole
+      existing.assignedClubId = wantsClubAdmin ? assignedClubId : ""
       existing.otpCode = otpCode
       existing.otpExpiresAt = new Date(
         Date.now() + OTP_EXPIRY_MINUTES * 60000
@@ -112,8 +125,8 @@ router.post(
         usn,
         yearOfStudy,
         phoneNumber,
-        role,
-        assignedClubId,
+        role: normalizedRole,
+        assignedClubId: wantsClubAdmin ? assignedClubId : "",
         otpCode,
         otpExpiresAt: new Date(
           Date.now() + OTP_EXPIRY_MINUTES * 60000
@@ -121,11 +134,15 @@ router.post(
       })
     }
 
-    await sendOtpEmail(email, otpCode)
+    const emailResult = await sendOtpEmail(email, otpCode)
+    const isDev = process.env.NODE_ENV !== "production"
+    const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
 
     return res.status(200).json({
       otpRequired: true,
-      message: "OTP sent to your college email.",
+      message: devOtp
+        ? `OTP sent to your college email. (DEV OTP: ${devOtp})`
+        : "OTP sent to your college email.",
     })
   })
 )
@@ -195,11 +212,15 @@ router.post(
     )
     await user.save()
 
-    await sendOtpEmail(email, otpCode)
+    const emailResult = await sendOtpEmail(email, otpCode)
+    const isDev = process.env.NODE_ENV !== "production"
+    const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
 
     return res.json({
       otpRequired: true,
-      message: "OTP sent to your college email.",
+      message: devOtp
+        ? `OTP sent to your college email. (DEV OTP: ${devOtp})`
+        : "OTP sent to your college email.",
     })
   })
 )
@@ -228,7 +249,36 @@ router.get(
 router.patch(
   "/id/:id",
   asyncHandler(async (req, res) => {
+    const actorId = req.header("x-user-id")
+    if (!actorId) {
+      return res.status(401).json({ message: "Missing user context." })
+    }
+
+    const actor = await User.findById(actorId)
+    if (!actor) {
+      return res.status(401).json({ message: "Invalid user context." })
+    }
+
+    const assignedClubId = actor.assignedClubId
+    const hasAssignedClub =
+      assignedClubId !== undefined &&
+      assignedClubId !== null &&
+      String(assignedClubId).trim() !== "" &&
+      String(assignedClubId).trim().toLowerCase() !== "null" &&
+      String(assignedClubId).trim().toLowerCase() !== "undefined"
+
+    const isPageAdmin = actor.role === "pageAdmin" || (actor.role === "admin" && !hasAssignedClub)
+    const isSelf = String(actor.id) === String(req.params.id)
+
+    if (!isSelf && !isPageAdmin) {
+      return res.status(403).json({ message: "Not authorized." })
+    }
+
     const updates = { ...(req.body || {}) }
+
+    if (updates.role === "pageAdmin") {
+      delete updates.role
+    }
 
     if (updates.password) {
       updates.passwordHash = await bcrypt.hash(updates.password, 10)
@@ -248,6 +298,112 @@ router.patch(
 
     res.json({
       user: sanitizeUser(user),
+    })
+  })
+)
+
+/* =====================================================
+   FORGOT PASSWORD REQUEST
+===================================================== */
+router.post(
+  "/forgot-password",
+  asyncHandler(async (req, res) => {
+    const { email } = req.body || {}
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required.",
+      })
+    }
+
+    if (!email.endsWith(APPROVED_DOMAIN)) {
+      return res.status(400).json({
+        message: "Email must be from @bmsce.ac.in domain.",
+      })
+    }
+
+    const user = await User.findOne({ email }).select("+otpCode +otpExpiresAt")
+
+    if (!user) {
+      // Don't reveal if email exists or not for security
+      return res.json({
+        message: "If an account with this email exists, a password reset OTP has been sent.",
+      })
+    }
+
+    const otpCode = generateOtp()
+    user.otpCode = otpCode
+    user.otpExpiresAt = new Date(
+      Date.now() + OTP_EXPIRY_MINUTES * 60000
+    )
+    await user.save()
+
+    const emailResult = await sendOtpEmail(email, otpCode)
+    const isDev = process.env.NODE_ENV !== "production"
+    const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
+
+    return res.json({
+      message: devOtp
+        ? `Password reset OTP sent to your college email. (DEV OTP: ${devOtp})`
+        : "Password reset OTP sent to your college email.",
+    })
+  })
+)
+
+/* =====================================================
+   RESET PASSWORD CONFIRMATION
+===================================================== */
+router.post(
+  "/reset-password",
+  asyncHandler(async (req, res) => {
+    const { email, otp, newPassword } = req.body || {}
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        message: "Missing required fields.",
+      })
+    }
+
+    if (!email.endsWith(APPROVED_DOMAIN)) {
+      return res.status(400).json({
+        message: "Email must be from @bmsce.ac.in domain.",
+      })
+    }
+
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must contain at least one uppercase letter, one special character, and one number.",
+      })
+    }
+
+    const user = await User.findOne({ email }).select(
+      "+otpCode +otpExpiresAt"
+    )
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found.",
+      })
+    }
+
+    if (user.otpCode !== otp || user.otpExpiresAt < Date.now()) {
+      return res.status(400).json({
+        message: "Invalid or expired OTP.",
+      })
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+    user.passwordHash = passwordHash
+    user.otpCode = undefined
+    user.otpExpiresAt = undefined
+    await user.save()
+
+    return res.json({
+      message: "Password reset successfully. You can now sign in with your new password.",
     })
   })
 )

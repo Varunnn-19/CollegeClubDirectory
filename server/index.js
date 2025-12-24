@@ -3,6 +3,8 @@ import express from "express"
 import cors from "cors"
 import connectDB from "./config/db.js"
 
+import next from "next"
+
 import authRoutes from "./routes/auth.js"
 import clubsRoutes from "./routes/clubs.js"
 import membershipsRoutes from "./routes/memberships.js"
@@ -13,6 +15,10 @@ import reviewsRoutes from "./routes/reviews.js"
 
 const app = express()
 
+const dev = process.env.NODE_ENV !== "production"
+const nextApp = next({ dev, dir: process.cwd() })
+const nextHandler = nextApp.getRequestHandler()
+
 /* =====================
    BODY PARSERS (MUST BE FIRST)
 ===================== */
@@ -22,20 +28,21 @@ app.use(express.urlencoded({ extended: true }))
 /* =====================
    CORS (FINAL FIX)
 ===================== */
-app.use(
-  cors({
-    origin: true, // ✅ allow ALL origins (Vercel previews included)
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "x-approver-email",
-    ],
-  })
-)
+const corsOptions = {
+  origin: true, // ✅ allow ALL origins (Vercel previews included)
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "x-approver-email",
+    "x-user-id",
+  ],
+}
 
-app.options("*", cors())
+app.use(cors(corsOptions))
+
+app.options("*", cors(corsOptions))
 
 /* =====================
    HEALTH CHECK
@@ -58,6 +65,12 @@ app.use("/api/rsvps", rsvpsRoutes)
 app.use("/api/announcements", announcementsRoutes)
 app.use("/api/reviews", reviewsRoutes)
 
+app.all("/api/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: Date.now() })
+})
+
+app.all("*", (req, res) => nextHandler(req, res))
+
 /* =====================
    ERROR HANDLER (JSON ONLY)
 ===================== */
@@ -72,6 +85,8 @@ app.use((err, _req, res, _next) => {
    START SERVER
 ===================== */
 const PORT = process.env.PORT || 4000
+
+await nextApp.prepare()
 
 connectDB()
   .then(() => {

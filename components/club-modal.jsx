@@ -18,13 +18,14 @@ export function ClubModal({ open, onOpenChange, club }) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!club?.slug) {
+    if (!club?.slug && !club?.id && !club?._id) {
       setDetail(null)
       return
     }
     let mounted = true
     setLoading(true)
-    getClubDetail(club.slug)
+    const clubIdentifier = club.slug || club.id || club._id
+    getClubDetail(club.slug || club.id || club._id)
       .then((data) => {
         if (mounted) setDetail(data)
       })
@@ -37,7 +38,7 @@ export function ClubModal({ open, onOpenChange, club }) {
     return () => {
       mounted = false
     }
-  }, [club?.slug])
+  }, [club?.slug, club?.id, club?._id])
 
   const stats = detail?.stats || club?.stats || {}
   const memberCount = stats.memberCount || 0
@@ -51,14 +52,14 @@ export function ClubModal({ open, onOpenChange, club }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-balance">{club.name}</DialogTitle>
+          <DialogTitle className="text-balance">{club.name || 'Unnamed Club'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {loading && <p className="text-sm text-muted-foreground">Loading club details...</p>}
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{club.category}</Badge>
-            <Badge>{club.membershipType}</Badge>
+            <Badge variant="secondary">{club.category || 'Uncategorized'}</Badge>
+            <Badge>{club.membershipType || 'Open'}</Badge>
             {rating > 0 && (
               <Badge variant="outline" className="gap-1">
                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -71,19 +72,19 @@ export function ClubModal({ open, onOpenChange, club }) {
             </span>
           </div>
 
-          <p className="text-sm text-muted-foreground">{club.fullDescription}</p>
+          <p className="text-sm text-muted-foreground">{club.fullDescription || club.shortDescription || 'No description available'}</p>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <h4 className="font-medium">Meeting Times</h4>
-              <p className="text-sm text-muted-foreground">{club.meetingTimes}</p>
+              <p className="text-sm text-muted-foreground">{club.meetingTimes || 'Not specified'}</p>
             </div>
             <div>
               <h4 className="font-medium">Contact</h4>
               <ul className="text-sm text-muted-foreground">
                 <li>
-                  <a className="underline underline-offset-4" href={`mailto:${club.email}`}>
-                    {club.email}
+                  <a className="underline underline-offset-4" href={`mailto:${club.email || 'contact@example.com'}`}>
+                    {club.email || 'No email available'}
                   </a>
                 </li>
                 {club.social?.website && (

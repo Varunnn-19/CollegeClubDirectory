@@ -125,7 +125,7 @@ export function ClubCard3D({ club, onOpen }) {
                   textShadow: isHovered ? "0 2px 8px rgba(0, 0, 0, 0.2)" : "none",
                 }}
               >
-                {club.name}
+                {club.name || 'Unnamed Club'}
               </CardTitle>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <Badge
@@ -135,7 +135,7 @@ export function ClubCard3D({ club, onOpen }) {
                     transform: `translateZ(10px) rotateY(${transform.rotateY * 0.3}deg)`,
                   }}
                 >
-                  {club.category}
+                  {club.category || 'Uncategorized'}
                 </Badge>
                 <Badge
                   className="transition-all duration-300 hover:scale-110"
@@ -143,7 +143,7 @@ export function ClubCard3D({ club, onOpen }) {
                     transform: `translateZ(10px) rotateY(${transform.rotateY * 0.3}deg)`,
                   }}
                 >
-                  {club.membershipType}
+                  {club.membershipType || 'Open'}
                 </Badge>
                 {rating > 0 && (
                   <Badge
@@ -167,7 +167,7 @@ export function ClubCard3D({ club, onOpen }) {
                 transform: `translateZ(5px)`,
               }}
             >
-              {club.shortDescription}
+              {club.shortDescription || club.fullDescription || 'No description available'}
             </p>
             <div
               className="flex items-center justify-between text-xs text-muted-foreground"
@@ -184,7 +184,7 @@ export function ClubCard3D({ club, onOpen }) {
                     e.stopPropagation()
                     onOpen?.(club)
                   }}
-                  aria-label={`Quick view ${club.name}`}
+                  aria-label={`Quick view ${club.name || 'club'}`}
                   style={{ position: 'relative', zIndex: 100 }}
                 >
                   Quick view
@@ -192,11 +192,11 @@ export function ClubCard3D({ club, onOpen }) {
                 <span className="text-primary" style={{ position: 'relative', zIndex: 100 }}>•</span>
                 <Link
                   className="text-sm font-medium text-primary transition-all duration-300 hover:underline hover:scale-110 active:scale-95"
-                  href={`/clubs/${club.slug || club.id}`}
+                  href={`/clubs/${club.slug || club.id || club._id}`}
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
-                  aria-label={`View details page for ${club.name}`}
+                  aria-label={`View details page for ${club.name || 'club'}`}
                   style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}
                 >
                   View details

@@ -33,6 +33,16 @@ router.patch(
   })
 )
 
+// Frontend uses PUT for event updates
+router.put(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+    if (!event) return res.status(404).json({ message: "Event not found." })
+    res.json({ event })
+  })
+)
+
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {

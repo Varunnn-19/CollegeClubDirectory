@@ -39,12 +39,21 @@ export default function CreateClubPage() {
   })
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null")
-    if (!user) {
+    const userString = localStorage.getItem("currentUser")
+    if (userString) {
+      try {
+        const user = JSON.parse(userString)
+        setCurrentUser(user)
+      } catch (err) {
+        console.error("Failed to parse user from localStorage:", err)
+        localStorage.removeItem("currentUser")
+        router.push("/sign-in")
+        return
+      }
+    } else {
       router.push("/sign-in")
       return
     }
-    setCurrentUser(user)
     setLoading(false)
   }, [router])
 
@@ -68,6 +77,7 @@ export default function CreateClubPage() {
     }
 
     try {
+      const userId = currentUser?.id || currentUser?._id
       const payload = {
         name: formData.name,
         slug: generateSlug(formData.name),
@@ -88,7 +98,7 @@ export default function CreateClubPage() {
         }),
 
         status: "pending",
-        createdBy: currentUser.id,
+        createdBy: userId,
       }
 
       const response = await apiRequest("/clubs", {
@@ -117,10 +127,10 @@ export default function CreateClubPage() {
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-20">
-        <Card className="max-w-md">
+        <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-green-600">Club Request Submitted ✓</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-green-600 text-center">Club Request Submitted ✓</CardTitle>
+            <CardDescription className="text-center">
               Your club is pending admin approval. Redirecting to clubs...
             </CardDescription>
           </CardHeader>

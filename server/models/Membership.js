@@ -8,7 +8,7 @@ const membershipSchema = new mongoose.Schema(
     userEmail: String,
     status: {
       type: String,
-      enum: ["pending", "active", "rejected"],
+      enum: ["pending", "joined", "rejected"],
       default: "pending",
     },
     role: { type: String, default: "member" },

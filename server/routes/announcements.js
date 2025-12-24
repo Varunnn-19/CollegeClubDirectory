@@ -45,6 +45,22 @@ router.patch(
   })
 )
 
+// Frontend uses PUT for announcement updates
+router.put(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const updates = { ...req.body }
+    const announcement = await Announcement.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    })
+    if (!announcement) {
+      return res.status(404).json({ message: "Announcement not found." })
+    }
+    res.json({ announcement })
+  })
+)
+
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {

@@ -69,25 +69,25 @@ export default function ClubDetailPage() {
         setRating(detail.stats?.rating || 0)
 
         if (user) {
-// inside useEffect, membership check block
+          const userId = user.id || user._id
+          const memberships = await getMembershipsByUser(userId)
+          if (!mounted) return
 
-if (user) {
-  const memberships = await getMembershipsByUser(user.id)
-  if (!mounted) return
+          const clubId = String(detail.club?.id || detail.club?._id || "")
 
-  const activeMembership = memberships.find(
-    (m) => m.clubId === detail.club._id && m.status === "joined"
-  )
+          const activeMembership = memberships.find(
+            (m) => String(m.clubId) === clubId && m.status === "joined"
+          )
 
-  const pendingMembership = memberships.find(
-    (m) => m.clubId === detail.club._id && m.status === "pending"
+          const pendingMembership = memberships.find(
+    (m) => String(m.clubId) === clubId && m.status === "pending"
   )
 
   // ✅ FIXED TYPO HERE
   setIsMember(!!activeMembership)
   setPendingMembership(!!pendingMembership)
 
-  const userRsvps = await getEventRSVPsByUser(user.id)
+  const userRsvps = await getEventRSVPsByUser(userId)
   if (!mounted) return
 
   const rsvpMap = {}
@@ -95,22 +95,19 @@ if (user) {
     rsvpMap[r.eventId] = r.status
   })
   setRsvps(rsvpMap)
-} else {
+} else  {
   setIsMember(false)
   setPendingMembership(false)
   setRsvps({})
 }
 
-        } else {
-          setIsMember(false)
-          setRsvps({})
-        }
         setError("")
       } catch (err) {
         console.error("Error loading club:", err)
         setError(err.message || "Unable to load club.")
         // Don't redirect immediately, show error first
-setLoading(false)      } finally {
+        setLoading(false)
+      } finally {
         if (mounted) setLoading(false)
       }
     }
@@ -127,34 +124,40 @@ setLoading(false)      } finally {
       return
     }
 
+    const userId = currentUser.id || currentUser._id
+    const clubId = club.id || club._id
+    const status = "pending"
+
     const membership = {
-      userId: currentUser.id || currentUser._id,
-clubId: club.id || club._id,
+      userId,
+      clubId,
       userName: currentUser.name,
       userEmail: currentUser.email,
-      status: "pending",
+      status,
       role: "member",
       joinedAt: new Date().toISOString(),
     }
 
     try {
       const saved = await saveMembership(membership)
-// Status is always "pending" - admin must approve
-          setPendingMembership(true); setIsMember(false);
-          }
-    catch (error) {
-if (error.status === 409 || error.message?.includes("already")) {
-      alert("You are already a member of this club!")
-    } else {
-      console.error(error)
-      alert("Failed to join club. Please try again.")
-    }    }
+      setPendingMembership(true)
+      setIsMember(false)
+    } catch (error) {
+      if (error.status === 409 || error.message?.includes("already")) {
+        alert("You are already a member of this club!")
+      } else {
+        console.error(error)
+        alert("Failed to join club. Please try again.")
+      }
+    }
   }
 
   const handleLeaveClub = async () => {
     if (!currentUser || !club) return
     try {
-      await deleteMembership(currentUser.id, club.id)
+      const userId = currentUser.id || currentUser._id
+      const clubId = club.id || club._id
+      await deleteMembership(userId, clubId)
       setIsMember(false)
       setMemberCount((prev) => Math.max(0, prev - 1))
     } catch (error) {
@@ -225,6 +228,15 @@ if (error.status === 409 || error.message?.includes("already")) {
   if (loading || !club) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
+
+  const clubId = club.id || club._id
+  const assignedClubId = currentUser?.assignedClubId
+  const isClubAdminForThisClub =
+    !!currentUser &&
+    (currentUser.role === "clubAdmin" || currentUser.role === "admin") &&
+    String(assignedClubId) === String(clubId)
+
+  const canViewMemberContent = isMember || isClubAdminForThisClub
 
   const getEventRSVPCount = (eventId) => {
     const event = events.find((evt) => (evt.id || `${evt.title}-${evt.date}`) === eventId)
@@ -314,7 +326,7 @@ if (error.status === 409 || error.message?.includes("already")) {
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-4 py-12 md:px-6">
 
-      {announcements.length > 0 && (
+      {canViewMemberContent && announcements.length > 0 && (
         <section className="mb-6">
           <h2 className="text-lg font-medium mb-3">Announcements</h2>
           <div className="space-y-2">
@@ -332,6 +344,18 @@ if (error.status === 409 || error.message?.includes("already")) {
               </Card>
             ))}
           </div>
+        </section>
+      )}
+
+      {!canViewMemberContent && (
+        <section className="mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">
+                Events and announcements are available only to approved members of this club.
+              </p>
+            </CardContent>
+          </Card>
         </section>
       )}
 
@@ -411,7 +435,7 @@ if (error.status === 409 || error.message?.includes("already")) {
         </Card>
       </section>
 
-      {events.length > 0 && (
+      {canViewMemberContent && events.length > 0 && (
         <section className="mt-6">
           <h2 className="text-lg font-medium mb-3">Upcoming Events</h2>
           <div className="space-y-3">

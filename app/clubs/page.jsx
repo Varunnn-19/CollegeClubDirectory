@@ -57,12 +57,12 @@ export default function ClubsPage() {
     const q = query.trim().toLowerCase()
     let filtered = allClubs.filter((c) => {
       const matchesQuery = q
-        ? c.name.toLowerCase().includes(q) ||
-          c.shortDescription?.toLowerCase().includes(q) ||
-          c.fullDescription?.toLowerCase().includes(q)
+        ? (c.name || '').toLowerCase().includes(q) ||
+          (c.shortDescription || '').toLowerCase().includes(q) ||
+          (c.fullDescription || '').toLowerCase().includes(q)
         : true
-      const matchesCategory = category === "All" ? true : c.category === category
-      const matchesMembership = membership === "All" ? true : c.membershipType === membership
+      const matchesCategory = category === "All" ? true : (c.category || 'Uncategorized') === category
+      const matchesMembership = membership === "All" ? true : (c.membershipType || 'Open') === membership
       
       // Rating filter
       if (minRating !== "0") {
@@ -77,9 +77,9 @@ export default function ClubsPage() {
     filtered = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case "name":
-          return a.name.localeCompare(b.name)
+          return (a.name || '').localeCompare(b.name || '')
         case "name-desc":
-          return b.name.localeCompare(a.name)
+          return (b.name || '').localeCompare(a.name || '')
         case "rating":
           return (parseFloat(b.stats?.rating || 0) ?? 0) - (parseFloat(a.stats?.rating || 0) ?? 0)
         case "members":

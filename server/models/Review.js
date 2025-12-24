@@ -4,7 +4,7 @@ const reviewSchema = new mongoose.Schema(
   {
     clubId: { type: String, required: true },
     userId: { type: String, required: true },
-    userName: { type: String, required: true },
+    userName: { type: String, default: "Anonymous" },
     rating: { type: Number, min: 1, max: 5, required: true },
     comment: { type: String, required: true },
   },
@@ -25,4 +25,3 @@ const reviewSchema = new mongoose.Schema(
 const Review = mongoose.models.Review || mongoose.model("Review", reviewSchema)
 
 export default Review
-mongoose.mongoose.model

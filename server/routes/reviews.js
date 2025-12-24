@@ -23,11 +23,11 @@ router.get(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const { clubId, userId, rating, comment } = req.body
+    const { clubId, userId, userName, rating, comment } = req.body
     if (!clubId || !userId || !rating) {
       return res.status(400).json({ message: "Missing required review fields." })
     }
-    const review = await Review.create({ clubId, userId, rating, comment })
+    const review = await Review.create({ clubId, userId, userName, rating, comment })
     res.status(201).json({ review })
   })
 )

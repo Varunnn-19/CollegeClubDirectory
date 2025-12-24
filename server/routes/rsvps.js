@@ -1,5 +1,6 @@
 import express from "express"
 import RSVP from "../models/RSVP.js"
+import Event from "../models/Event.js"
 import asyncHandler from "../utils/asyncHandler.js"
 
 const router = express.Router()
@@ -27,10 +28,20 @@ router.post(
     if (!userId || !eventId) {
       return res.status(400).json({ message: "Missing required RSVP fields." })
     }
-    const rsvp = await RSVP.create({
-      ...req.body,
-      status: req.body.status || "going"
-    })
+    const status = req.body.status || "going"
+
+    const rsvp = await RSVP.findOneAndUpdate(
+      { userId, eventId },
+      { ...req.body, status },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    )
+
+    // If eventId looks like a Mongo ObjectId, update rsvpCount on Event
+    if (/^[a-f0-9]{24}$/i.test(String(eventId))) {
+      const goingCount = await RSVP.countDocuments({ eventId: String(eventId), status: "going" })
+      await Event.findByIdAndUpdate(eventId, { rsvpCount: goingCount })
+    }
+
     res.status(201).json({ rsvp })
   })
 )
