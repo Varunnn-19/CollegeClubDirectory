@@ -136,8 +136,7 @@ router.post(
 
     const emailResult = await sendOtpEmail(email, otpCode)
     const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"
-    const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
-
+ const devOtp = (process.env.EMAIL_SIMULATION_MODE === "true" || emailResult?.simulated) && isDev ? emailResult?.code || otpCode : undefined
     return res.status(200).json({
       otpRequired: true,
       message: devOtp
@@ -217,7 +216,7 @@ router.post(
          
          
     
-    const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
+const devOtp = isDev ? emailResult?.code : undefined
 
     return res.json({
       otpRequired: true,
@@ -343,7 +342,7 @@ router.post(
 
     const emailResult = await sendOtpEmail(email, otpCode)
     const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"
-    const devOtp = emailResult?.simulated && isDev ? emailResult?.code : undefined
+    const devOtp = isDev ? emailResult?.code : undefined && isDev ? emailResult?.code : undefined
 
     return res.json({
       message: devOtp
