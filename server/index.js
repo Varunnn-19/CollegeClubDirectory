@@ -3,7 +3,8 @@ import express from "express"
 import cors from "cors"
 import connectDB from "./config/db.js"
 
-import next from "next"
+import fs from "fs"
+import path from "path"
 
 import authRoutes from "./routes/auth.js"
 import clubsRoutes from "./routes/clubs.js"
@@ -16,8 +17,16 @@ import reviewsRoutes from "./routes/reviews.js"
 const app = express()
 
 const dev = process.env.NODE_ENV !== "production"
-const nextApp = next({ dev, dir: process.cwd() })
-const nextHandler = nextApp.getRequestHandler()
+
+const nextRootCandidates = [
+  process.cwd(),
+  path.resolve(process.cwd(), ".."),
+]
+
+const nextRoot = nextRootCandidates.find((dir) => fs.existsSync(path.join(dir, ".next")))
+
+let nextApp = null
+let nextHandler = null
 
 /* =====================
    BODY PARSERS (MUST BE FIRST)
@@ -69,7 +78,13 @@ app.all("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: Date.now() })
 })
 
-app.all("*", (req, res) => nextHandler(req, res))
+if (nextRoot) {
+  const { default: next } = await import("next")
+  nextApp = next({ dev, dir: nextRoot })
+  nextHandler = nextApp.getRequestHandler()
+  await nextApp.prepare()
+  app.all("*", (req, res) => nextHandler(req, res))
+}
 
 /* =====================
    ERROR HANDLER (JSON ONLY)
@@ -85,8 +100,6 @@ app.use((err, _req, res, _next) => {
    START SERVER
 ===================== */
 const PORT = process.env.PORT || 4000
-
-await nextApp.prepare()
 
 connectDB()
   .then(() => {
