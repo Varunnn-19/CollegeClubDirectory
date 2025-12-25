@@ -223,6 +223,7 @@ const devOtp = isDev ? emailResult?.code : undefined
       message: devOtp
         ? `OTP sent to your college email. (DEV OTP: ${devOtp})`
         : "OTP sent to your college email.",
+            otp: devOtp || undefined,
     })
   })
 )
@@ -348,6 +349,7 @@ router.post(
       message: devOtp
         ? `Password reset OTP sent to your college email. (DEV OTP: ${devOtp})`
         : "Password reset OTP sent to your college email.",
+            otp: devOtp || undefined,
     })
   })
 )
