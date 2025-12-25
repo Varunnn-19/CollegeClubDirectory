@@ -68,7 +68,7 @@ export default function SignInPage() {
         if (data?.otpRequired) {
           setOtpRequested(true);
 setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
-                      setOtp(data.otp || "");
+                       "");
           return
         }
       }
@@ -122,7 +122,7 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
 
       if (data?.otpRequired) {
         setOtpRequested(true)
-        setOtp(data.otp || ""
+        setOtp(data.otp || "");
         setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
         return
       }
