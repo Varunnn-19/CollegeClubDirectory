@@ -127,9 +127,6 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
         return
       }
 
-      setInfo("OTP sent to your @bmsce.ac.in email.")
-      setOtp("")
-      setOtpRequested(true)
     } catch (err) {
       console.error(err)
       setError(err.message || "Unable to resend OTP. Please try again.")
