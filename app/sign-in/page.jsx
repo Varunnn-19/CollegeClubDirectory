@@ -16,8 +16,7 @@ export default function SignInPage() {
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
   const [loading, setLoading] = useState(false)
-  const [68
-    , setOtpRequested] = useState(false)
+  const [otpRequested, setOtpRequested] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [forgotPasswordStep, setForgotPasswordStep] = useState(1) // 1: email, 2: otp, 3: success
   const [resetEmail, setResetEmail] = useState("")
