@@ -123,7 +123,7 @@ export default function SignInPage() {
 
       if (data?.otpRequired) {
         setOtpRequested(true)
-        setOtp("")
+        setOtp(data.otp || ""
         setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
         return
       }
