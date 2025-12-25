@@ -14,6 +14,8 @@ import rsvpsRoutes from "./routes/rsvps.js"
 import announcementsRoutes from "./routes/announcements.js"
 import reviewsRoutes from "./routes/reviews.js"
 
+import createSimulationRouter, { isSimulationMode } from "./simulation.js"
+
 const app = express()
 
 const dev = process.env.NODE_ENV !== "production"
@@ -66,13 +68,19 @@ app.get("/health", (_req, res) => {
 /* =====================
    ROUTES
 ===================== */
-app.use("/api/users", authRoutes)
-app.use("/api/clubs", clubsRoutes)
-app.use("/api/memberships", membershipsRoutes)
-app.use("/api/events", eventsRoutes)
-app.use("/api/rsvps", rsvpsRoutes)
-app.use("/api/announcements", announcementsRoutes)
-app.use("/api/reviews", reviewsRoutes)
+const SIMULATION = isSimulationMode()
+
+if (SIMULATION) {
+  app.use("/api", createSimulationRouter())
+} else {
+  app.use("/api/users", authRoutes)
+  app.use("/api/clubs", clubsRoutes)
+  app.use("/api/memberships", membershipsRoutes)
+  app.use("/api/events", eventsRoutes)
+  app.use("/api/rsvps", rsvpsRoutes)
+  app.use("/api/announcements", announcementsRoutes)
+  app.use("/api/reviews", reviewsRoutes)
+}
 
 app.all("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: Date.now() })
@@ -101,13 +109,19 @@ app.use((err, _req, res, _next) => {
 ===================== */
 const PORT = process.env.PORT || 4000
 
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`)
+if (SIMULATION) {
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT} (SIMULATION MODE)`)
+  })
+} else {
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`✅ Server running on port ${PORT}`)
+      })
     })
-  })
-  .catch((err) => {
-    console.error("❌ Database connection failed:", err)
-    process.exit(1)
-  })
+    .catch((err) => {
+      console.error("❌ Database connection failed:", err)
+      process.exit(1)
+    })
+}

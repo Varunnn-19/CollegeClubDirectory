@@ -135,13 +135,20 @@ router.post(
     }
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"
- const devOtp = (process.env.EMAIL_SIMULATION_MODE === "true" || emailResult?.simulated) && isDev ? emailResult?.code || otpCode : undefined
+    const isDev = process.env.NODE_ENV !== "production"
+    const exposeOtp =
+      isDev &&
+      (process.env.SHOW_DEV_OTP === "true" ||
+        process.env.EMAIL_SIMULATION_MODE === "true" ||
+        emailResult?.simulated)
+    const devOtp = exposeOtp ? emailResult?.code || otpCode : undefined
+    console.log("[DEV OTP DEBUG] exposeOtp:", exposeOtp, "devOtp:", devOtp)
     return res.status(200).json({
       otpRequired: true,
       message: devOtp
         ? `OTP sent to your college email. (DEV OTP: ${devOtp})`
         : "OTP sent to your college email.",
+      otp: devOtp || undefined,
     })
   })
 )
@@ -212,18 +219,20 @@ router.post(
     await user.save()
 
     const emailResult = await sendOtpEmail(email, otpCode)
-       const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"
-         
-         
-    
-const devOtp = isDev ? emailResult?.code : undefined
+    const isDev = process.env.NODE_ENV !== "production"
+    const exposeOtp =
+      isDev &&
+      (process.env.SHOW_DEV_OTP === "true" ||
+        process.env.EMAIL_SIMULATION_MODE === "true" ||
+        emailResult?.simulated)
+    const devOtp = exposeOtp ? emailResult?.code || otpCode : undefined
 
     return res.json({
       otpRequired: true,
       message: devOtp
         ? `OTP sent to your college email. (DEV OTP: ${devOtp})`
         : "OTP sent to your college email.",
-            otp: devOtp || undefined,
+      otp: devOtp || undefined,
     })
   })
 )
@@ -342,14 +351,19 @@ router.post(
     await user.save()
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production" || process.env.EMAIL_SIMULATION_MODE === "true"
-    const devOtp = isDev ? emailResult?.code : undefined && isDev ? emailResult?.code : undefined
+    const isDev = process.env.NODE_ENV !== "production"
+    const exposeOtp =
+      isDev &&
+      (process.env.SHOW_DEV_OTP === "true" ||
+        process.env.EMAIL_SIMULATION_MODE === "true" ||
+        emailResult?.simulated)
+    const devOtp = exposeOtp ? emailResult?.code || otpCode : undefined
 
     return res.json({
       message: devOtp
         ? `Password reset OTP sent to your college email. (DEV OTP: ${devOtp})`
         : "Password reset OTP sent to your college email.",
-            otp: devOtp || undefined,
+      otp: devOtp || undefined,
     })
   })
 )

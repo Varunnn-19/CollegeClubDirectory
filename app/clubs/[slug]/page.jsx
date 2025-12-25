@@ -61,12 +61,12 @@ export default function ClubDetailPage() {
         if (!mounted) return
         const user = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("currentUser") || "null") : null
         setCurrentUser(user)
-        setClub({ ...detail.club, stats: detail.stats })
-        setMemberCount(detail.stats?.memberCount || 0)
+        setClub(detail.club)
+        setMemberCount(detail.club?.stats?.memberCount || 0)
         setEvents(detail.events || [])
         setReviews(detail.reviews || [])
         setAnnouncements(detail.announcements || [])
-        setRating(detail.stats?.rating || 0)
+        setRating(detail.club?.stats?.rating || 0)
 
         if (user) {
           const userId = user.id || user._id
@@ -171,12 +171,14 @@ export default function ClubDetailPage() {
       return
     }
 
+    const userId = currentUser.id || currentUser._id
+
     const previousStatus = rsvps[eventId]
     try {
       const event = events.find((evt) => (evt.id || `${evt.title}-${evt.date}`) === eventId)
       await saveEventRSVP({
         eventId,
-        userId: currentUser.id,
+        userId,
         status,
         clubId: club.id,
         clubName: club.name,
@@ -203,9 +205,11 @@ export default function ClubDetailPage() {
   const handleSubmitReview = async () => {
     if (!currentUser || !club || !reviewComment.trim()) return
 
+    const userId = currentUser.id || currentUser._id
+
     const review = {
       clubId: club.id,
-      userId: currentUser.id,
+      userId,
       userName: currentUser.name,
       rating: reviewRating,
       comment: reviewComment,

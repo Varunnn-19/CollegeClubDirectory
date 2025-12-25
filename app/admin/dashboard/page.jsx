@@ -48,7 +48,13 @@ export default function AdminDashboard() {
       setCurrentUser(cachedUser)
 
       try {
-        const { user } = await apiRequest(`/users/id/${cachedUser.id}`)
+        const cachedUserId = cachedUser?.id || cachedUser?._id
+        if (!cachedUserId) {
+          router.push("/sign-in")
+          return
+        }
+
+        const { user } = await apiRequest(`/users/id/${cachedUserId}`)
 
         const assignedClubId = user?.assignedClubId
         const hasAssignedClub =

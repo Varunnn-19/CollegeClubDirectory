@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "dev": "nodemon server/index.js",
+    "dev": "concurrently \"nodemon server/index.js\" \"next dev\"",
     "dev:client": "next dev",
     "lint": "eslint . --ext js,jsx,ts,tsx",
     "start": "cross-env NODE_ENV=production node server/index.js",

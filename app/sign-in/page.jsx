@@ -13,6 +13,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [otp, setOtp] = useState("")
+  const [loginDevOtp, setLoginDevOtp] = useState("")
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
   const [loading, setLoading] = useState(false)
@@ -21,6 +22,7 @@ export default function SignInPage() {
   const [forgotPasswordStep, setForgotPasswordStep] = useState(1) // 1: email, 2: otp, 3: success
   const [resetEmail, setResetEmail] = useState("")
   const [resetOtp, setResetOtp] = useState("")
+  const [resetDevOtp, setResetDevOtp] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
@@ -66,9 +68,13 @@ export default function SignInPage() {
         }
 
         if (data?.otpRequired) {
-          setOtpRequested(true);
-setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
-                       "");
+          setOtpRequested(true)
+          if (data?.otp) {
+            setOtp(data.otp)
+            setLoginDevOtp(data.otp)
+            console.log("[FRONTEND DEBUG] Received OTP from backend:", data.otp)
+          }
+          setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
           return
         }
       }
@@ -122,7 +128,8 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
 
       if (data?.otpRequired) {
         setOtpRequested(true)
-        setOtp(data.otp || "");
+        setOtp(data.otp || "")
+        setLoginDevOtp(data.otp || "")
         setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
         return
       }
@@ -157,6 +164,10 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
         })
 
         setInfo(data.message || "Password reset OTP sent to your email.")
+        if (data?.otp) {
+          setResetOtp(data.otp)
+          setResetDevOtp(data.otp)
+        }
         setForgotPasswordStep(2)
       } else if (forgotPasswordStep === 2) {
         // Verify OTP and reset password
@@ -204,6 +215,7 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
     setForgotPasswordStep(1)
     setResetEmail("")
     setResetOtp("")
+    setResetDevOtp("")
     setNewPassword("")
     setConfirmPassword("")
     setError("")
@@ -268,6 +280,11 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
                   onChange={(e) => setOtp(e.target.value)}
                   required
                 />
+                {loginDevOtp ? (
+                  <div className="text-xs text-primary bg-primary/10 border border-primary/20 p-2 rounded">
+                    DEV OTP: {loginDevOtp}
+                  </div>
+                ) : null}
                 <p className="text-xs text-muted-foreground">
                   Check your @bmsce.ac.in inbox for the code.
                 </p>
@@ -299,6 +316,7 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
                 onClick={() => {
                   setOtp("")
                   setOtpRequested(false)
+                  setLoginDevOtp("")
                   setInfo("")
                 }}
               >
@@ -380,6 +398,11 @@ setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
                           maxLength={6}
                           required
                         />
+                        {resetDevOtp ? (
+                          <div className="text-xs text-primary bg-primary/10 border border-primary/20 p-2 rounded">
+                            DEV OTP: {resetDevOtp}
+                          </div>
+                        ) : null}
                         <p className="text-xs text-muted-foreground">
                           Check your email for the reset code.
                         </p>

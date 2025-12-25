@@ -22,6 +22,7 @@ export default function SignUpPage() {
     assignedClubId: "",
   })
   const [otp, setOtp] = useState("")
+  const [devOtp, setDevOtp] = useState("")
   const [otpRequested, setOtpRequested] = useState(false)
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
@@ -108,10 +109,13 @@ export default function SignUpPage() {
         body: payload,
       })
 
-      if (otpRequired) {
+      if (data?.otpRequired) {
         setOtpRequested(true)
         setInfo(data.message || "OTP sent to your college email.")
-                    if (data?.otp) setOtp(data.otp)
+        if (data?.otp) {
+          setOtp(data.otp)
+          setDevOtp(data.otp)
+        }
         setLoading(false)
         return
       }
@@ -273,6 +277,11 @@ export default function SignUpPage() {
                     onChange={(e) => setOtp(e.target.value)}
                     required
                   />
+                  {devOtp ? (
+                    <div className="text-xs text-primary bg-primary/10 border border-primary/20 p-2 rounded">
+                      DEV OTP: {devOtp}
+                    </div>
+                  ) : null}
                   <p className="text-xs text-muted-foreground">Check your @bmsce.ac.in inbox for the code.</p>
                 </div>
               </div>
