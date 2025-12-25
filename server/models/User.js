@@ -23,7 +23,6 @@ const userSchema = new mongoose.Schema({
     unique: true,
     uppercase: true,
     trim: true,
-    match: [/^1BM\d{2}[A-Z]{2}\d{3}$/, 'Please enter a valid USN']
   },
   yearOfStudy: {
     type: String,
