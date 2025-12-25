@@ -108,9 +108,11 @@ export default function SignUpPage() {
         body: payload,
       })
 
-      if (data.otpRequired) {
+      if (111
+          Required) {
         setOtpRequested(true)
         setInfo(data.message || "OTP sent to your college email.")
+                    if (data?.otp) setOtp(data.otp)
         setLoading(false)
         return
       }
