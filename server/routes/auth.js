@@ -135,12 +135,12 @@ router.post(
     }
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production"
-    const exposeOtp =
-      isDev &&
-      (process.env.SHOW_DEV_OTP === "true" ||
-        process.env.EMAIL_SIMULATION_MODE === "true" ||
-        emailResult?.simulated)
+  const exposeOtp =
+  process.env.SHOW_DEV_OTP === "true" ||
+  process.env.EMAIL_SIMULATION_MODE === "true" ||
+  emailResult?.simulated
+
+
     const devOtp = exposeOtp ? emailResult?.code || otpCode : undefined
     console.log("[DEV OTP DEBUG] exposeOtp:", exposeOtp, "devOtp:", devOtp)
     return res.status(200).json({
@@ -219,12 +219,11 @@ router.post(
     await user.save()
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production"
-    const exposeOtp =
-      isDev &&
-      (process.env.SHOW_DEV_OTP === "true" ||
-        process.env.EMAIL_SIMULATION_MODE === "true" ||
-        emailResult?.simulated)
+   const exposeOtp =
+  process.env.SHOW_DEV_OTP === "true" ||
+  process.env.EMAIL_SIMULATION_MODE === "true" ||
+  emailResult?.simulated
+
     const devOtp = exposeOtp ? emailResult?.code || otpCode : undefined
 
     return res.json({
@@ -351,12 +350,11 @@ router.post(
     await user.save()
 
     const emailResult = await sendOtpEmail(email, otpCode)
-    const isDev = process.env.NODE_ENV !== "production"
-    const exposeOtp =
-      isDev &&
-      (process.env.SHOW_DEV_OTP === "true" ||
-        process.env.EMAIL_SIMULATION_MODE === "true" ||
-        emailResult?.simulated)
+  const exposeOtp =
+  process.env.SHOW_DEV_OTP === "true" ||
+  process.env.EMAIL_SIMULATION_MODE === "true" ||
+  emailResult?.simulated
+
     const devOtp = exposeOtp ? emailResult?.code || otpCode : undefined
 
     return res.json({
