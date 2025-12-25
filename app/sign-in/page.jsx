@@ -16,7 +16,8 @@ export default function SignInPage() {
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
   const [loading, setLoading] = useState(false)
-  const [otpRequested, setOtpRequested] = useState(false)
+  const [68
+    , setOtpRequested] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [forgotPasswordStep, setForgotPasswordStep] = useState(1) // 1: email, 2: otp, 3: success
   const [resetEmail, setResetEmail] = useState("")
@@ -68,6 +69,7 @@ export default function SignInPage() {
         if (data?.otpRequired) {
           setOtpRequested(true)
           setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
+                      if (data?.otp) setOtp(data.otp)
           return
         }
       }
