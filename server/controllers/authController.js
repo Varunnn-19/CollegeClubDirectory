@@ -55,7 +55,7 @@ export const register = async (req, res) => {
     // Send verification email
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?otp=${otp}&email=${email}`;
     
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'Verify Your Email - BMSCE Club Directory',
       html: `
@@ -80,6 +80,7 @@ export const register = async (req, res) => {
         email: user.email,
         role: user.role,
         isVerified: user.isVerified
+                    ...(emailResult?.code && { otp: emailResult.code })
       }
     });
   } catch (error) {
