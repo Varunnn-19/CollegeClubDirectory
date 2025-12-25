@@ -242,6 +242,14 @@ router.patch(
       return res.status(404).json({ message: "Club not found." })
     }
 
+    // If club is being approved, promote the creator to club admin
+    if (status === "approved" && club.createdBy) {
+      await User.findByIdAndUpdate(club.createdBy, {
+        role: "clubAdmin",
+        assignedClubId: club._id,
+      })
+    }
+
     res.json({ club })
   })
 )
