@@ -66,9 +66,9 @@ export default function SignInPage() {
         }
 
         if (data?.otpRequired) {
-          setOtpRequested(true)
-          setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
-                      if (data?.otp) setOtp(data.otp)
+          setOtpRequested(true);
+          setInfo(data.message || "OTP sent to your @bmsce.ac.in email.");
+setOtp(data.otp || "")
           return
         }
       }
