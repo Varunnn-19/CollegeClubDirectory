@@ -1,11 +1,10 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { getClubs } from "@/lib/data-utils"
 import { apiRequest } from "@/lib/api-client"
 
 export default function SignUpPage() {
@@ -18,8 +17,6 @@ export default function SignUpPage() {
     phoneNumber: "",
     password: "",
     confirmPassword: "",
-    role: "user",
-    assignedClubId: "",
   })
   const [otp, setOtp] = useState("")
   const [devOtp, setDevOtp] = useState("")
@@ -27,19 +24,6 @@ export default function SignUpPage() {
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
   const [loading, setLoading] = useState(false)
-  const [clubOptions, setClubOptions] = useState([])
-
-  useEffect(() => {
-    const loadClubs = async () => {
-      try {
-        const list = await getClubs()
-        setClubOptions(list)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    loadClubs()
-  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -53,25 +37,20 @@ export default function SignUpPage() {
     setLoading(true)
 
     if (!otpRequested) {
-      if (
-        !formData.name ||
-        !formData.email ||
-        !formData.usn ||
-        !formData.yearOfStudy ||
-        !formData.phoneNumber ||
-        !formData.password
-      ) {
-        setError("All fields are required")
+      const missing = []
+      if (!formData.name) missing.push("Name")
+      if (!formData.email) missing.push("Email")
+      if (!formData.usn) missing.push("USN")
+      if (!formData.yearOfStudy) missing.push("Year of Study")
+      if (!formData.phoneNumber) missing.push("Phone Number")
+      if (!formData.password) missing.push("Password")
+
+      if (missing.length > 0) {
+        setError(`Missing required fields: ${missing.join(", ")}`)
         setLoading(false)
         return
       }
 
-      const isClubAdmin = formData.role === "clubAdmin"
-      if (isClubAdmin && !formData.assignedClubId) {
-        setError("Please select a club to manage")
-        setLoading(false)
-        return
-      }
 
       if (formData.password !== formData.confirmPassword) {
         setError("Passwords do not match")
@@ -125,12 +104,7 @@ export default function SignUpPage() {
       window.dispatchEvent(new Event("auth-change"))
       
       await new Promise(resolve => setTimeout(resolve, 100))
-      const isClubAdminUser = user.role === "clubAdmin" || (user.role === "admin" && user.assignedClubId)
-      if (isClubAdminUser && user.assignedClubId) {
-        router.push(`/club-admin/${user.assignedClubId}`)
-      } else {
-        router.push("/")
-      }
+      router.push("/")
     } catch (err) {
       setError(err.message || "An error occurred. Please try again.")
     } finally {
@@ -177,10 +151,12 @@ export default function SignUpPage() {
                   <Input
                     type="text"
                     name="usn"
-                    placeholder="1BM21CS001"
+                    placeholder="Enter your USN (any value)"
                     value={formData.usn}
                     onChange={handleChange}
                     required
+                    pattern=".*"
+                    title="USN is required"
                   />
                 </div>
                 <div className="space-y-1">
@@ -210,37 +186,6 @@ export default function SignUpPage() {
                     required
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">Account Type</label>
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
-                  >
-                    <option value="user">Regular User</option>
-                    <option value="clubAdmin">Club Admin</option>
-                  </select>
-                </div>
-                {formData.role === "clubAdmin" && (
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium">Select Club to Manage</label>
-                    <select
-                      name="assignedClubId"
-                      value={formData.assignedClubId}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
-                      required={formData.role === "clubAdmin"}
-                    >
-                      <option value="">Select a club</option>
-                      {clubOptions.map((club) => (
-                        <option key={club.id} value={club.id}>
-                          {club.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
                 <div className="space-y-1">
                   <label className="text-sm font-medium">Password</label>
                   <Input

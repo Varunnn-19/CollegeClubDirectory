@@ -72,7 +72,6 @@ export default function SignInPage() {
           if (data?.otp) {
             setOtp(data.otp)
             setLoginDevOtp(data.otp)
-            console.log("[FRONTEND DEBUG] Received OTP from backend:", data.otp)
           }
           setInfo(data.message || "OTP sent to your @bmsce.ac.in email.")
           return

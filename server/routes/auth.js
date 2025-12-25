@@ -28,26 +28,11 @@ router.post(
       usn,
       yearOfStudy,
       phoneNumber,
-      role = "user",
-      assignedClubId = "",
       otp,
     } = body
 
-    if (role === "pageAdmin") {
-      return res.status(403).json({
-        message: "Page admin accounts can only be created by an administrator in the database.",
-      })
-    }
-
-    const normalizedRole = role === "admin" ? "clubAdmin" : role
-    const wantsClubAdmin = normalizedRole === "clubAdmin"
-
-    if (wantsClubAdmin && (!assignedClubId || String(assignedClubId).trim() === "")) {
-      return res.status(400).json({ message: "Club admins must select a club to manage." })
-    }
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Missing required fields." })
+    if (!name || !email || !password || !usn) {
+      return res.status(400).json({ message: "Missing required fields (name, email, password, USN)." })
     }
 
     if (!email.endsWith(APPROVED_DOMAIN)) {
@@ -55,6 +40,8 @@ router.post(
         message: "Email must be from @bmsce.ac.in domain.",
       })
     }
+
+    const trimmedUsn = usn.trim()
 
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])(?=.*[0-9]).{6,}$/
@@ -95,11 +82,26 @@ router.post(
 
     const existing = await User.findOne({ email })
 
+    // Allow re-sending OTP if user exists but hasn't completed OTP verification
     if (existing && !existing.otpCode) {
       return res.status(400).json({
         message: "Email already registered.",
       })
     }
+
+    // Temporarily skip USN uniqueness check for testing
+    // TODO: Re-enable after testing
+    /*
+    // Only check USN uniqueness if this is a new user (no existing record with OTP)
+    if (!existing) {
+      const existingUsn = await User.findOne({ usn: trimmedUsn })
+      if (existingUsn) {
+        return res.status(400).json({
+          message: "USN already registered.",
+        })
+      }
+    }
+    */
 
     const otpCode = generateOtp()
     const passwordHash = await bcrypt.hash(password, 10)
@@ -107,11 +109,9 @@ router.post(
     if (existing) {
       existing.name = name
       existing.passwordHash = passwordHash
-      existing.usn = usn
+      existing.usn = trimmedUsn
       existing.yearOfStudy = yearOfStudy
       existing.phoneNumber = phoneNumber
-      existing.role = normalizedRole
-      existing.assignedClubId = wantsClubAdmin ? assignedClubId : ""
       existing.otpCode = otpCode
       existing.otpExpiresAt = new Date(
         Date.now() + OTP_EXPIRY_MINUTES * 60000
@@ -122,11 +122,11 @@ router.post(
         name,
         email,
         passwordHash,
-        usn,
+        usn: trimmedUsn,
         yearOfStudy,
         phoneNumber,
-        role: normalizedRole,
-        assignedClubId: wantsClubAdmin ? assignedClubId : "",
+        role: "user",
+        assignedClubId: "",
         otpCode,
         otpExpiresAt: new Date(
           Date.now() + OTP_EXPIRY_MINUTES * 60000
@@ -142,7 +142,6 @@ router.post(
 
 
     const devOtp = exposeOtp ? emailResult?.code || otpCode : undefined
-    console.log("[DEV OTP DEBUG] exposeOtp:", exposeOtp, "devOtp:", devOtp)
     return res.status(200).json({
       otpRequired: true,
       message: devOtp
@@ -200,6 +199,21 @@ router.post(
         return res.status(400).json({
           message: "Invalid or expired OTP.",
         })
+      }
+
+      // Club admin validation: ensure the user is assigned to a club if role is clubAdmin
+      if (user.role === "clubAdmin") {
+        const hasAssignedClub =
+          user.assignedClubId &&
+          String(user.assignedClubId).trim() !== "" &&
+          String(user.assignedClubId).trim().toLowerCase() !== "null" &&
+          String(user.assignedClubId).trim().toLowerCase() !== "undefined"
+
+        if (!hasAssignedClub) {
+          return res.status(403).json({
+            message: "Your club admin account is not yet assigned to a club. Please contact the system administrator.",
+          })
+        }
       }
 
       user.otpCode = undefined
