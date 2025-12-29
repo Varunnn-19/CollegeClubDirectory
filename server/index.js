@@ -71,8 +71,11 @@ app.get("/health", (_req, res) => {
 const SIMULATION = isSimulationMode()
 
 if (SIMULATION) {
+  console.log("🚀 Running in SIMULATION mode")
   app.use("/api", createSimulationRouter())
 } else {
+  console.log("🗄️ Running with MongoDB")
+  await connectDB()
   app.use("/api/users", authRoutes)
   app.use("/api/clubs", clubsRoutes)
   app.use("/api/memberships", membershipsRoutes)
