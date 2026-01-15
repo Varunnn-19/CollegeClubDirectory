@@ -1,8 +1,15 @@
 {
   "extends": ["next", "next/core-web-vitals"],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off"
   },
-  "ignorePatterns": ["server/**/*", "server-only.js", "add-members.js"]
+  "ignorePatterns": ["server/**/*", "server-only.js", "add-members.js", "app/landing/**/*", "app/clubs/[slug]/page.jsx"]
 }

@@ -117,6 +117,51 @@ export default function ClubDetailPage() {
     }
   }, [params.slug, router])
 
+  // Poll for membership status changes every 10 seconds
+  useEffect(() => {
+    if (!currentUser || !club) return
+
+    const checkMembershipStatus = async () => {
+      try {
+        const userId = currentUser.id || currentUser._id
+        const memberships = await getMembershipsByUser(userId)
+        const clubId = String(club.id || club._id || "")
+        
+        const activeMembership = memberships.find(
+          (m) => String(m.clubId) === clubId && m.status === "joined"
+        )
+        
+        const pendingMembership = memberships.find(
+          (m) => String(m.clubId) === clubId && m.status === "pending"
+        )
+
+        // Update membership status if changed
+        const newIsMember = !!activeMembership
+        const newPendingMembership = !!pendingMembership
+        
+        if (newIsMember !== isMember || newPendingMembership !== pendingMembership) {
+          setIsMember(newIsMember)
+          setPendingMembership(newPendingMembership)
+          
+          // If membership status changed to 'joined', refresh club data to get updated member count
+          if (newIsMember && !isMember) {
+            const updatedDetail = await getClubDetail(params.slug)
+            if (updatedDetail?.club?.stats?.memberCount !== undefined) {
+              setMemberCount(updatedDetail.club.stats.memberCount)
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking membership status:", error)
+      }
+    }
+
+    // Set up polling interval
+    const interval = setInterval(checkMembershipStatus, 10000) // Check every 10 seconds
+    
+    return () => clearInterval(interval)
+  }, [currentUser, club, isMember, pendingMembership, params.slug])
+
   const handleJoinClub
     = async () => {
     if (!currentUser || !club) {
@@ -142,6 +187,11 @@ export default function ClubDetailPage() {
       const saved = await saveMembership(membership)
       setPendingMembership(true)
       setIsMember(false)
+      // Refresh member count after joining
+      const updatedDetail = await getClubDetail(params.slug)
+      if (updatedDetail?.club?.stats?.memberCount !== undefined) {
+        setMemberCount(updatedDetail.club.stats.memberCount)
+      }
     } catch (error) {
       if (error.status === 409 || error.message?.includes("already")) {
         alert("You are already a member of this club!")
@@ -250,7 +300,7 @@ export default function ClubDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section - Completely separate from header */}
-      <section className="pt-32 pb-12 border-b bg-gradient-to-b from-background to-muted/20">
+      <section className="pt-32 pb-12 border-b bg-linear-to-b from-background to-muted/20">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <nav aria-label="Breadcrumb" className="mb-6 text-sm">
             <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -265,7 +315,7 @@ export default function ClubDetailPage() {
           </nav>
 
           <div className="flex flex-col gap-6 md:flex-row md:items-start">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <img
                 src={club.logoUrl || "/placeholder.svg"}
                 alt={`${club.name} logo`}

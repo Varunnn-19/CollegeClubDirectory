@@ -2,7 +2,9 @@ import Membership from "../models/Membership.js"
 import Review from "../models/Review.js"
 
 export async function buildClubStats(clubIds = []) {
-  const matchClub = clubIds.length ? { clubId: { $in: clubIds } } : {}
+  // Convert ObjectIds to strings for proper matching with Membership.clubId (which is String)
+  const clubIdStrings = clubIds.map(id => id.toString())
+  const matchClub = clubIdStrings.length ? { clubId: { $in: clubIdStrings } } : {}
 
   const [memberAgg, reviewAgg] = await Promise.all([
     Membership.aggregate([
