@@ -8,7 +8,7 @@ export async function buildClubStats(clubIds = []) {
 
   const [memberAgg, reviewAgg] = await Promise.all([
     Membership.aggregate([
-      { $match: { ...matchClub, status: "joined" } },
+      { $match: { ...matchClub, status: { $in: ["pending", "joined"] } } },
       { $group: { _id: "$clubId", count: { $sum: 1 } } },
     ]),
     Review.aggregate([
