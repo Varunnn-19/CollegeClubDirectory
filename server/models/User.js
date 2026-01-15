@@ -102,9 +102,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Indexes
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ usn: 1 }, { unique: true });
+// Indexes - email and usn are already unique in schema
 
 // Virtual for user's full profile URL
 userSchema.virtual('profileUrl').get(function() {

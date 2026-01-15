@@ -9,6 +9,7 @@ import Membership from "../models/Membership.js"
 import User from "../models/User.js"
 import asyncHandler from "../utils/asyncHandler.js"
 import { buildClubStats } from "../utils/stats.js"
+import { seedClubs } from "../utils/seedClubs.js"
 
 const router = express.Router()
 
@@ -302,6 +303,17 @@ router.delete(
     ])
 
     res.json({ message: "Club deleted successfully." })
+  })
+)
+
+/* =====================================================
+   SEED CLUBS
+===================================================== */
+router.post(
+  "/seed",
+  asyncHandler(async (req, res) => {
+    const result = await seedClubs()
+    res.json(result)
   })
 )
 
