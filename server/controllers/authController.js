@@ -80,7 +80,7 @@ export const register = async (req, res) => {
         email: user.email,
         role: user.role,
         isVerified: user.isVerified
-                    ...(emailResult?.code && { otp: emailResult.code })
+                    (emailResult?.code && { otp: emailResult.code })
       }
     });
   } catch (error) {
